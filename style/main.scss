@@ -2,6 +2,14 @@
 
 @import "normalize";
 
+
+// For iOS
+html, body, #renderpoint {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
 body {
   background-color: #b3b5bd;
   -webkit-font-smoothing: antialiased;
