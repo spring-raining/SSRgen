@@ -49,7 +49,10 @@ var ASSETS = {
   PENCIL_3: 'pencil_1.png',
   BG: 'bg.png',
   ORB: 'orb.png',
-  FLARE: 'flare.png'
+  FLARE: 'flare.png',
+  CUTE_FRAME: 'cute_frame.png',
+  PASSION_FRAME: 'passion_frame.png',
+  COOL_FRAME: 'cool_frame.png'
 };
 
 var GRADIENT = {
@@ -387,8 +390,15 @@ var Canvas = function (_React$Component2) {
       };
     }
   }, {
+    key: 'getPencilBG',
+    value: function getPencilBG(name) {
+      return name === 'cute' ? this.props.assets.CUTE_BG : name === 'cool' ? this.props.assets.COOL_BG : name === 'passion' ? this.props.assets.PASSION_BG : null;
+    }
+  }, {
     key: 'generate',
     value: function generate() {
+      var plain = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+
       return (0, _co2.default)(regeneratorRuntime.mark(function _callee2() {
         var canvas, ctx;
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
@@ -403,24 +413,26 @@ var Canvas = function (_React$Component2) {
 
                 ctx.globalCompositeOperation = 'source-over';
 
-                if (this.props.settings.showBG) {
+                if (this.props.settings.showBG && !plain) {
                   ctx.drawImage(this.refs.BG.getCanvas(), 0, 0);
                 }
                 ctx.drawImage(this.refs.bottom.getCanvas(), 0, 0);
                 ctx.drawImage(this.refs.topShadow.getCanvas(), 0, 0);
                 ctx.drawImage(this.refs.top.getCanvas(), 0, 0);
-                if (this.props.settings.showOrb) {
+                if (this.props.settings.showOrb && !plain) {
                   ctx.drawImage(this.refs.orb.getCanvas(), 0, 0);
                 }
-                if (this.props.settings.showFlare) {
+                if (this.props.settings.showFlare && !plain) {
                   ctx.drawImage(this.refs.flare.getCanvas(), 0, 0);
                 }
-                ctx.font = '16px sans-serif';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.fillText('SSRサインジェネレータ ' + _package2.default.homepage, 10, 700);
+                if (!plain) {
+                  ctx.font = '16px sans-serif';
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                  ctx.fillText('SSRサインジェネレータ ' + _package2.default.homepage, 10, 700);
+                }
                 return _context2.abrupt('return', canvas);
 
-              case 15:
+              case 13:
               case 'end':
                 return _context2.stop();
             }
@@ -689,6 +701,15 @@ var Sidebar = function (_React$Component3) {
               'button',
               { onClick: this.props.onGenerateButtonClick },
               '画像を作成'
+            )
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: 'sidebar__section' },
+            _react2.default.createElement(
+              'button',
+              { onClick: this.props.onPlayWithMovieButtonClick },
+              '演出を鑑賞'
             )
           ),
           _react2.default.createElement(
@@ -1176,6 +1197,7 @@ var App = function (_React$Component5) {
           fullscreen: this.state.fullscreen,
           onSettingsChange: this._onSettingsChange.bind(this),
           onGenerateButtonClick: this._onGenerateButtonClick.bind(this),
+          onPlayWithMovieButtonClick: this._onPlayWithMovieButtonClick.bind(this),
           onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this),
           onUndoButtonClick: this._onUndoButtonClick.bind(this)
         }),
@@ -1217,6 +1239,19 @@ var App = function (_React$Component5) {
       });
     }
   }, {
+    key: 'popupPlayWithMovieModal',
+    value: function popupPlayWithMovieModal(image) {
+      var modal = _react2.default.createElement(
+        Modal,
+        { className: 'sign-video-modal',
+          onCloseButtonClick: this._onCloseButtonClick.bind(this) },
+        _react2.default.createElement(MoviePlayer, { image: image, type: this.state.settings.pencilColor })
+      );
+      this.setState({
+        modal: modal
+      });
+    }
+  }, {
     key: '_onSettingsChange',
     value: function _onSettingsChange(changes) {
       this.setState({
@@ -1251,6 +1286,38 @@ var App = function (_React$Component5) {
             }
           }
         }, _callee5, this);
+      }).bind(this));
+    }
+  }, {
+    key: '_onPlayWithMovieButtonClick',
+    value: function _onPlayWithMovieButtonClick() {
+      (0, _co2.default)(regeneratorRuntime.mark(function _callee6() {
+        var canvas, objectURL, image;
+        return regeneratorRuntime.wrap(function _callee6$(_context6) {
+          while (1) {
+            switch (_context6.prev = _context6.next) {
+              case 0:
+                _context6.next = 2;
+                return this.refs.canvas.generate(true);
+
+              case 2:
+                canvas = _context6.sent;
+                _context6.next = 5;
+                return canvasToObjectURL(canvas);
+
+              case 5:
+                objectURL = _context6.sent;
+                image = new Image();
+
+                image.src = objectURL;
+                this.popupPlayWithMovieModal(image);
+
+              case 9:
+              case 'end':
+                return _context6.stop();
+            }
+          }
+        }, _callee6, this);
       }).bind(this));
     }
   }, {
@@ -1305,49 +1372,313 @@ var App = function (_React$Component5) {
   return App;
 }(_react2.default.Component);
 
-(0, _co2.default)(regeneratorRuntime.mark(function _callee6() {
+var MoviePlayer = function (_React$Component6) {
+  _inherits(MoviePlayer, _React$Component6);
+
+  function MoviePlayer(props) {
+    _classCallCheck(this, MoviePlayer);
+
+    var _this14 = _possibleConstructorReturn(this, Object.getPrototypeOf(MoviePlayer).call(this, props));
+
+    _this14.state = {
+      nameStandBy: true,
+      characterTitle: '',
+      characterName: '',
+      background: null
+    };
+    return _this14;
+  }
+
+  _createClass(MoviePlayer, [{
+    key: 'easeAlpha',
+    value: function easeAlpha(time, inTime, outTime, easeTime) {
+      if (time < inTime || time > outTime) return 0;
+      var alpha = 1;
+      if (time < inTime + easeTime) alpha = (time - inTime) / easeTime;
+      if (time > outTime - easeTime) alpha = (outTime - time) / easeTime;
+      return alpha;
+    }
+  }, {
+    key: 'drawSign',
+    value: function drawSign(x, y) {
+      var alpha = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
+      var scale = arguments.length <= 3 || arguments[3] === undefined ? 1 : arguments[3];
+      var compositeMode = arguments[4];
+      var _refs$canvas = this.refs.canvas;
+      var width = _refs$canvas.width;
+      var height = _refs$canvas.height;
+
+      if (alpha <= 0) return;
+      this.ctx.save();
+      this.ctx.globalAlpha = alpha;
+      if (compositeMode) this.ctx.globalCompositeOperation = compositeMode;
+      this.ctx.drawImage(this.props.image, x, y, width * scale, height * scale);
+      this.ctx.restore();
+    }
+  }, {
+    key: 'drawCharacter',
+    value: function drawCharacter(time) {
+      var _refs$canvas2 = this.refs.canvas;
+      var width = _refs$canvas2.width;
+      var height = _refs$canvas2.height;
+
+      var alpha = this.easeAlpha(time, 7, 20, 0);
+      if (!this.state.background || alpha <= 0) return;
+      var iw = this.state.background.width;
+      var ih = this.state.background.height;
+      var scale = width / height > iw / ih ? width / iw : height / ih;
+      var x = (width - iw * scale) / 2;
+      var y = (height - ih * scale) / 2;
+      this.ctx.drawImage(this.state.background, x, y, iw * scale, ih * scale);
+    }
+  }, {
+    key: 'draw',
+    value: function draw() {
+      if (!this.refs.video) return;
+      window.requestAnimationFrame(this.draw.bind(this));
+      if (this.refs.video.paused) return;
+      var _refs$canvas3 = this.refs.canvas;
+      var width = _refs$canvas3.width;
+      var height = _refs$canvas3.height;
+
+      var time = this.refs.video.currentTime;
+      this.ctx.clearRect(0, 0, width, height);
+      this.ctx.globalCompositeOperation = 'lighter';
+      // main sign, displayed largely on center
+      this.drawSign(0, 0, this.easeAlpha(time, 4.5, 7, 0.7));
+      // pasted character image
+      this.drawCharacter(time);
+      // main video
+      this.ctx.drawImage(this.refs.video, 0, 0, width, height);
+      // small sign, displayed with the character
+      this.drawSign(0, 200, this.easeAlpha(time, 10, 20, 1), 0.5, 'source-over');
+      // black sign, displayed for a moment on the whiteout screen
+      this.drawSign(0, 0, this.easeAlpha(time, 6.5, 7.5, 0.5), 1, 'difference');
+      var nameStandBy = time < 10;
+      if (this.state.nameStandBy != nameStandBy) this.setState({ nameStandBy: nameStandBy });
+    }
+  }, {
+    key: 'characterLoad',
+    value: function characterLoad(event) {
+      var img = new Image();
+      img.src = event.target.result;
+      this.setState({ background: img });
+    }
+  }, {
+    key: 'paste',
+    value: function paste(event) {
+      var items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = items[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var item = _step.value;
+
+          if (item.kind === 'file') {
+            var blob = item.getAsFile();
+            var reader = new FileReader();
+            reader.onload = this.characterLoad.bind(this);
+            reader.readAsDataURL(blob);
+            break;
+          }
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      this.ctx = this.refs.canvas.getContext('2d');
+      this.boundPaste = this.paste.bind(this);
+      window.addEventListener('paste', this.boundPaste);
+      window.requestAnimationFrame(this.draw.bind(this));
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      window.removeEventListener('paste', this.boundPaste);
+    }
+  }, {
+    key: 'rewindButtonClick',
+    value: function rewindButtonClick() {
+      this.refs.video.currentTime = 0;
+      this.refs.video.play();
+    }
+  }, {
+    key: 'fileSelect',
+    value: function fileSelect() {
+      var file = this.refs.file.files[0];
+      if (file) {
+        var reader = new FileReader();
+        reader.onloadend = this.characterLoad.bind(this);
+        reader.readAsDataURL(file);
+      } else {
+        this.setState({ background: null });
+      }
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this15 = this;
+
+      return _react2.default.createElement(
+        'div',
+        null,
+        _react2.default.createElement(
+          'h3',
+          null,
+          '演出を鑑賞'
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: 'sign-video-container' },
+          _react2.default.createElement('canvas', { ref: 'canvas', width: '720', height: '405' }),
+          _react2.default.createElement('video', { ref: 'video', src: 'ssr_drawn.mp4', autoPlay: true }),
+          _react2.default.createElement(CharacterNameFrame, { title: this.state.characterTitle,
+            name: this.state.characterName,
+            type: this.props.type,
+            standBy: this.state.nameStandBy })
+        ),
+        _react2.default.createElement(
+          'div',
+          null,
+          _react2.default.createElement(
+            'button',
+            { onClick: this.rewindButtonClick.bind(this) },
+            '最初から'
+          ),
+          '  [',
+          _react2.default.createElement('input', { type: 'text',
+            placeholder: '肩書き',
+            value: this.state.characterTitle,
+            onChange: function onChange(ev) {
+              return _this15.setState({ characterTitle: ev.target.value });
+            } }),
+          ']  ',
+          _react2.default.createElement('input', { type: 'text',
+            placeholder: '名前',
+            value: this.state.characterName,
+            onChange: function onChange(ev) {
+              return _this15.setState({ characterName: ev.target.value });
+            } })
+        ),
+        _react2.default.createElement(
+          'div',
+          null,
+          'キャラ画像 ',
+          _react2.default.createElement('input', { type: 'file',
+            ref: 'file',
+            onChange: this.fileSelect.bind(this) })
+        ),
+        _react2.default.createElement(
+          'p',
+          null,
+          _react2.default.createElement(
+            'small',
+            null,
+            '画像はブラウザ内のみで処理され、外部にアップロードはされません。'
+          )
+        )
+      );
+    }
+  }]);
+
+  return MoviePlayer;
+}(_react2.default.Component);
+
+var CharacterNameFrame = function (_React$Component7) {
+  _inherits(CharacterNameFrame, _React$Component7);
+
+  function CharacterNameFrame() {
+    _classCallCheck(this, CharacterNameFrame);
+
+    return _possibleConstructorReturn(this, Object.getPrototypeOf(CharacterNameFrame).apply(this, arguments));
+  }
+
+  _createClass(CharacterNameFrame, [{
+    key: 'render',
+    value: function render() {
+      var classNames = ['character-frame', this.props.type];
+      if (this.props.standBy) classNames.push('stand-by');
+      return _react2.default.createElement(
+        'div',
+        { className: classNames.join(' ') },
+        _react2.default.createElement(
+          'div',
+          { className: 'character-title' },
+          '[',
+          this.props.title,
+          ']'
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: 'character-name' },
+          this.props.name
+        )
+      );
+    }
+  }]);
+
+  return CharacterNameFrame;
+}(_react2.default.Component);
+
+(0, _co2.default)(regeneratorRuntime.mark(function _callee7() {
   var assets;
-  return regeneratorRuntime.wrap(function _callee6$(_context6) {
+  return regeneratorRuntime.wrap(function _callee7$(_context7) {
     while (1) {
-      switch (_context6.prev = _context6.next) {
+      switch (_context7.prev = _context7.next) {
         case 0:
-          _context6.next = 2;
+          _context7.next = 2;
           return fetchAsset(ASSETS.PENCIL_1);
 
         case 2:
-          _context6.t0 = _context6.sent;
-          _context6.next = 5;
+          _context7.t0 = _context7.sent;
+          _context7.next = 5;
           return fetchAsset(ASSETS.PENCIL_2);
 
         case 5:
-          _context6.t1 = _context6.sent;
-          _context6.next = 8;
+          _context7.t1 = _context7.sent;
+          _context7.next = 8;
           return fetchAsset(ASSETS.PENCIL_3);
 
         case 8:
-          _context6.t2 = _context6.sent;
-          _context6.next = 11;
+          _context7.t2 = _context7.sent;
+          _context7.next = 11;
           return fetchAsset(ASSETS.BG);
 
         case 11:
-          _context6.t3 = _context6.sent;
-          _context6.next = 14;
+          _context7.t3 = _context7.sent;
+          _context7.next = 14;
           return fetchAsset(ASSETS.ORB);
 
         case 14:
-          _context6.t4 = _context6.sent;
-          _context6.next = 17;
+          _context7.t4 = _context7.sent;
+          _context7.next = 17;
           return fetchAsset(ASSETS.FLARE);
 
         case 17:
-          _context6.t5 = _context6.sent;
+          _context7.t5 = _context7.sent;
           assets = {
-            PENCIL_1: _context6.t0,
-            PENCIL_2: _context6.t1,
-            PENCIL_3: _context6.t2,
-            BG: _context6.t3,
-            ORB: _context6.t4,
-            FLARE: _context6.t5
+            PENCIL_1: _context7.t0,
+            PENCIL_2: _context7.t1,
+            PENCIL_3: _context7.t2,
+            BG: _context7.t3,
+            ORB: _context7.t4,
+            FLARE: _context7.t5
           };
 
 
@@ -1355,10 +1686,10 @@ var App = function (_React$Component5) {
 
         case 20:
         case 'end':
-          return _context6.stop();
+          return _context7.stop();
       }
     }
-  }, _callee6, this);
+  }, _callee7, this);
 }));
 
 },{"./../package.json":469,"babel-polyfill":2,"blueimp-canvas-to-blob":4,"co":5,"react":468,"react-dom":329,"react-social":330}],2:[function(require,module,exports){
@@ -8505,18 +8836,18 @@ var EventListener = {
    * @param {function} callback Callback function.
    * @return {object} Object with a `remove` method.
    */
-  listen: function (target, eventType, callback) {
+  listen: function listen(target, eventType, callback) {
     if (target.addEventListener) {
       target.addEventListener(eventType, callback, false);
       return {
-        remove: function () {
+        remove: function remove() {
           target.removeEventListener(eventType, callback, false);
         }
       };
     } else if (target.attachEvent) {
       target.attachEvent('on' + eventType, callback);
       return {
-        remove: function () {
+        remove: function remove() {
           target.detachEvent('on' + eventType, callback);
         }
       };
@@ -8531,11 +8862,11 @@ var EventListener = {
    * @param {function} callback Callback function.
    * @return {object} Object with a `remove` method.
    */
-  capture: function (target, eventType, callback) {
+  capture: function capture(target, eventType, callback) {
     if (target.addEventListener) {
       target.addEventListener(eventType, callback, true);
       return {
-        remove: function () {
+        remove: function remove() {
           target.removeEventListener(eventType, callback, true);
         }
       };
@@ -8549,7 +8880,7 @@ var EventListener = {
     }
   },
 
-  registerDefault: function () {}
+  registerDefault: function registerDefault() {}
 };
 
 module.exports = EventListener;
@@ -8673,7 +9004,7 @@ module.exports = camelizeStyleName;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @typechecks
+ * 
  */
 
 var isTextNode = require('./isTextNode');
@@ -8682,10 +9013,6 @@ var isTextNode = require('./isTextNode');
 
 /**
  * Checks if a given DOM node contains or is another DOM node.
- *
- * @param {?DOMNode} outerNode Outer DOM node.
- * @param {?DOMNode} innerNode Inner DOM node.
- * @return {boolean} True if `outerNode` contains or is `innerNode`.
  */
 function containsNode(outerNode, innerNode) {
   if (!outerNode || !innerNode) {
@@ -8696,7 +9023,7 @@ function containsNode(outerNode, innerNode) {
     return false;
   } else if (isTextNode(innerNode)) {
     return containsNode(outerNode, innerNode.parentNode);
-  } else if (outerNode.contains) {
+  } else if ('contains' in outerNode) {
     return outerNode.contains(innerNode);
   } else if (outerNode.compareDocumentPosition) {
     return !!(outerNode.compareDocumentPosition(innerNode) & 16);
@@ -8932,6 +9259,7 @@ module.exports = createNodesFromMarkup;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * 
  */
 
 function makeEmptyFunction(arg) {
@@ -8945,7 +9273,7 @@ function makeEmptyFunction(arg) {
  * primarily useful idiomatically for overridable function endpoints which
  * always need to be callable, since JS lacks a null-call idiom ala Cocoa.
  */
-function emptyFunction() {}
+var emptyFunction = function emptyFunction() {};
 
 emptyFunction.thatReturns = makeEmptyFunction;
 emptyFunction.thatReturnsFalse = makeEmptyFunction(false);
@@ -9386,7 +9714,7 @@ var invariant = require('./invariant');
  * @param {object} obj
  * @return {object}
  */
-var keyMirror = function (obj) {
+var keyMirror = function keyMirror(obj) {
   var ret = {};
   var key;
   !(obj instanceof Object && !Array.isArray(obj)) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'keyMirror(...): Argument must be an object.') : invariant(false) : void 0;
@@ -9424,7 +9752,7 @@ module.exports = keyMirror;
  * 'xa12' in that case. Resolve keys you want to use once at startup time, then
  * reuse those resolutions.
  */
-var keyOf = function (oneKeyObj) {
+var keyOf = function keyOf(oneKeyObj) {
   var key;
   for (key in oneKeyObj) {
     if (!oneKeyObj.hasOwnProperty(key)) {
@@ -9496,6 +9824,7 @@ module.exports = mapObject;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * 
  * @typechecks static-only
  */
 
@@ -9503,9 +9832,6 @@ module.exports = mapObject;
 
 /**
  * Memoizes the return value of a function that accepts one string argument.
- *
- * @param {function} callback
- * @return {function}
  */
 
 function memoizeStringOnly(callback) {
@@ -9566,11 +9892,11 @@ var performanceNow;
  * because of Facebook's testing infrastructure.
  */
 if (performance.now) {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return performance.now();
   };
 } else {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return Date.now();
   };
 }
@@ -9669,7 +9995,7 @@ var emptyFunction = require('./emptyFunction');
 var warning = emptyFunction;
 
 if (process.env.NODE_ENV !== 'production') {
-  warning = function (condition, format) {
+  warning = function warning(condition, format) {
     for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
     }
@@ -10148,17 +10474,31 @@ module.exports = require('react/lib/ReactDOM');
     }
   });
 
+  exports.TwitterCount = React.createClass({
+    displayName: "TwitterCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=all";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.twitter || 0;
+    }
+  });
+
   exports.GooglePlusCount = React.createClass({
     displayName: "GooglePlusCount"
 
     , mixins: [Count]
 
     , constructUrl: function () {
-      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url);
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=google";
     }
 
     , extractCount: function (data) {
-      return data.shares.google;
+      return data.shares.google || 0;
     }
   });
 
@@ -10238,6 +10578,20 @@ module.exports = require('react/lib/ReactDOM');
 
     , extractCount: function (data) {
       return data.response.note_count || 0;
+    }
+  });
+
+  exports.PocketCount = React.createClass({
+    displayName: "PocketCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=pocket";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.pocket || 0;
     }
   });
 
@@ -10364,6 +10718,16 @@ module.exports = require('react/lib/ReactDOM');
 
     , constructUrl: function () {
       return "https://www.tumblr.com/widgets/share/tool?posttype=link&title=" + encodeURIComponent(this.props.message) + "&content=" + encodeURIComponent(this.props.url) + "&canonicalUrl=" + encodeURIComponent(this.props.url) + "&shareSource=tumblr_share_button";
+    }
+  });
+
+  exports.PocketButton = React.createClass({
+    displayName: "PocketButton"
+
+    , mixins: [Button, DefaultBlankTarget]
+
+    , constructUrl: function () {
+      return "https://getpocket.com/save?url=" + encodeURIComponent(this.props.url) + "&title=" + encodeURIComponent(this.props.message);
     }
   });
 

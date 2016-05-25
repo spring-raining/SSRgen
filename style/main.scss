@@ -196,6 +196,9 @@ ul.sidebar__choice {
   background-color: white;
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
   border-radius: 2px;
+  h3 {
+    margin: 0;
+  }
 }
 
 .modal-close {
@@ -212,14 +215,87 @@ ul.sidebar__choice {
   }
 }
 
-.save-modal {
-  h3 {
-    margin: 0;
-  }
-}
-
 .save-modal__img {
   width: 480px;
   padding: 16px 0;
   display: block;
+}
+
+.sign-video-modal .modal {
+  max-width: 750px;
+  max-height: 550px;
+}
+
+.sign-video-container {
+  position: relative;
+  overflow: hidden;
+  width: 720px;
+  img {
+    width: 720px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    transition: 0.3s opacity linear;
+    &.hidden {
+      opacity: 0;
+    }
+  }
+  video {
+    width: 720px;
+    display: none; // content drawn onto canvas
+  }
+}
+
+.character-frame {
+  position: absolute;
+  left: 350px;
+  top: 270px;
+  transform-origin: left top;
+  transform: scale(0.4) rotateZ(-10deg);
+  width: 807px;
+  height: 286px;
+  transition: all 0.5s linear;
+  &.stand-by {
+    transition: none;
+    transform: scale(0.4) rotateZ(-10deg) translateX(300px);
+    opacity: 0;
+  }
+  .character-title {
+    position: absolute;
+    top: 50px;
+    left: 320px;
+    right: 0;
+    line-height: 45px;
+    font-size: 45px;
+    font-weight: bold;
+    text-shadow:
+      2px  2px 0 white, -2px  2px 0 white,
+      2px -2px 0 white, -2px -2px 0 white,
+      5px 5px 5px gray;
+  }
+  .character-name {
+    position: absolute;
+    top: 110px;
+    left: 0;
+    right: 0;
+    line-height: 90px;
+    font-size: 90px;
+    font-weight: bold;
+    text-align: center;
+    text-shadow:
+      2px  2px 0 white, -2px  2px 0 white,
+      2px -2px 0 white, -2px -2px 0 white,
+      5px 5px 5px gray;
+  }
+  @mixin type-color($type, $color) {
+    &.#{$type} {
+      background-image: url('#{$type}_frame.png');
+      .character-title { color: $color; }
+      .character-name { color: $color; }
+    }
+  }
+  @include type-color('cool', #1a5ae0);
+  @include type-color('cute', #ff367d);
+  @include type-color('passion', #e87902);
 }
