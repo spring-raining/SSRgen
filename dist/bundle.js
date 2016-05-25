@@ -160,7 +160,6 @@ var Layer = function (_React$Component) {
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate(prevProps, prevState) {
-      //console.log(this.state.commandQueue, this.state.runningCommand);
       if (this.state.commandQueue.length > 0 && !this.state.runningCommand) {
         this.setState({
           commandQueue: this.state.commandQueue.slice(1),
@@ -308,9 +307,9 @@ var Canvas = function (_React$Component2) {
           onMouseMove: this._onCanvasMouseMove.bind(this),
           onMouseUp: this._onCanvasMouseUp.bind(this),
           onMouseLeave: this._onCanvasMouseUp.bind(this),
-          onTouchStart: this._onCanvasMouseDown.bind(this),
-          onTouchMove: this._onCanvasMouseMove.bind(this),
-          onTouchEnd: this._onCanvasMouseUp.bind(this)
+          onTouchStart: this._onCanvasTouchStart.bind(this),
+          onTouchMove: this._onCanvasTouchMove.bind(this),
+          onTouchEnd: this._onCanvasTouchEnd.bind(this)
         })
       );
     }
@@ -362,7 +361,7 @@ var Canvas = function (_React$Component2) {
                 }
                 ctx.font = '16px sans-serif';
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.fillText(_package2.default.description + ' ' + _package2.default.homepage, 10, 700);
+                ctx.fillText('SSRサインジェネレータ ' + _package2.default.homepage, 10, 700);
                 return _context2.abrupt('return', canvas);
 
               case 15:
@@ -439,7 +438,7 @@ var Canvas = function (_React$Component2) {
 
           _this6.setState({
             topLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topLayerCommand,
-            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
+            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.lightMode ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
             bottomLayerCommand: !_this6.props.settings.enableBottomLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : bottomLayerCommand,
             mousePos: currentPoint
           });
@@ -455,6 +454,33 @@ var Canvas = function (_React$Component2) {
         mousePos: null,
         topLayerCommand: null,
         bottomLayerCommand: null
+      });
+    }
+  }, {
+    key: '_onCanvasTouchStart',
+    value: function _onCanvasTouchStart(e) {
+      var touch = e.changedTouches[0];
+      this._onCanvasMouseDown.bind(this)({
+        clientX: touch.pageX,
+        clientY: touch.pageY
+      });
+    }
+  }, {
+    key: '_onCanvasTouchMove',
+    value: function _onCanvasTouchMove(e) {
+      var touch = e.changedTouches[0];
+      this._onCanvasMouseMove.bind(this)({
+        clientX: touch.pageX,
+        clientY: touch.pageY
+      });
+    }
+  }, {
+    key: '_onCanvasTouchEnd',
+    value: function _onCanvasTouchEnd(e) {
+      var touch = e.changedTouches[0];
+      this._onCanvasMouseUp.bind(this)({
+        clientX: touch.pageX,
+        clientY: touch.pageY
       });
     }
   }]);
@@ -486,7 +512,7 @@ var Sidebar = function (_React$Component3) {
           'div',
           { className: 'sidebar__switch',
             onClick: this._onSwitchClick.bind(this) },
-          'SSR Sign Generator'
+          'SSRサインジェネレータ'
         ),
         _react2.default.createElement(
           'div',
@@ -686,6 +712,24 @@ var Sidebar = function (_React$Component3) {
                 }),
                 'フレアを表示'
               )
+            ),
+            _react2.default.createElement(
+              'label',
+              null,
+              _react2.default.createElement(
+                'li',
+                null,
+                _react2.default.createElement('input', { type: 'checkbox',
+                  checked: this.props.settings.lightMode,
+                  onChange: this._onSettingsChangeClick.bind(this)({ lightMode: !this.props.settings.lightMode })
+                }),
+                '軽量モード',
+                _react2.default.createElement(
+                  'div',
+                  { className: 'sidebar__footnote' },
+                  'スマホなどで動作が重いときに使ってください'
+                )
+              )
             )
           ),
           _react2.default.createElement(
@@ -805,7 +849,8 @@ var App = function (_React$Component4) {
         enableBottomLayer: true,
         showBG: true,
         showOrb: true,
-        showFlare: true
+        showFlare: true,
+        lightMode: false
       },
       windowWidth: 1280,
       windowHeight: 720,
@@ -865,7 +910,7 @@ var App = function (_React$Component4) {
           }),
           _react2.default.createElement(
             'div',
-            { style: { position: 'absolute', bottom: 0, right: 0 } },
+            { style: { position: 'absolute', bottom: '12px', right: '12px' } },
             _react2.default.createElement(
               'button',
               { className: 'app__pencil ' + (this.state.settings.drawMode === 'pencil' ? '' : 'disabled'),
@@ -905,7 +950,7 @@ var App = function (_React$Component4) {
     key: '_onGenerateButtonClick',
     value: function _onGenerateButtonClick() {
       (0, _co2.default)(regeneratorRuntime.mark(function _callee3() {
-        var canvas, url;
+        var canvas;
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
@@ -919,11 +964,6 @@ var App = function (_React$Component4) {
                 return saveCanvas(canvas, 'test.png');
 
               case 5:
-                url = _context3.sent;
-
-                console.log(url);
-
-              case 7:
               case 'end':
                 return _context3.stop();
             }
@@ -28190,7 +28230,7 @@ module.exports = require('./lib/React');
 module.exports={
   "name": "ssrgen",
   "version": "1.0.0",
-  "description": "SSR Sign Generator #SSR_generator",
+  "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/index.js",
   "scripts": {
