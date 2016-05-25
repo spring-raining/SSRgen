@@ -94,20 +94,10 @@ function draw(ctx, pencil, p1, p2) {
   }
 }
 
-function saveCanvas(canvas, filename) {
+function canvasToObjectURL(canvas) {
   return new Promise(function (resolve, reject) {
     canvas.toBlob(function (blob) {
       var objectURL = window.URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      var evt = new MouseEvent('click', {
-        view: window,
-        bubbles: true,
-        cancelable: true
-      });
-
-      a.download = filename;
-      a.href = objectURL;
-      a.dispatchEvent(evt);
       resolve(objectURL);
     });
   });
@@ -832,15 +822,54 @@ var Sidebar = function (_React$Component3) {
   return Sidebar;
 }(_react2.default.Component);
 
-var App = function (_React$Component4) {
-  _inherits(App, _React$Component4);
+var Modal = function (_React$Component4) {
+  _inherits(Modal, _React$Component4);
+
+  function Modal() {
+    _classCallCheck(this, Modal);
+
+    return _possibleConstructorReturn(this, Object.getPrototypeOf(Modal).apply(this, arguments));
+  }
+
+  _createClass(Modal, [{
+    key: 'render',
+    value: function render() {
+      return _react2.default.createElement(
+        'div',
+        { className: 'modal-bg ' + this.props.className,
+          onClick: this.props.onCloseButtonClick
+        },
+        _react2.default.createElement(
+          'div',
+          { className: 'modal',
+            onClick: function onClick(e) {
+              return e.stopPropagation();
+            } },
+          this.props.children,
+          _react2.default.createElement(
+            'button',
+            { className: 'modal-close',
+              onClick: this.props.onCloseButtonClick
+            },
+            '×'
+          )
+        )
+      );
+    }
+  }]);
+
+  return Modal;
+}(_react2.default.Component);
+
+var App = function (_React$Component5) {
+  _inherits(App, _React$Component5);
 
   function App(props) {
     _classCallCheck(this, App);
 
-    var _this9 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
+    var _this10 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
 
-    _this9.state = {
+    _this10.state = {
       settings: {
         drawMode: 'pencil',
         pencilType: 'PENCIL_1',
@@ -854,20 +883,21 @@ var App = function (_React$Component4) {
       },
       windowWidth: 1280,
       windowHeight: 720,
-      fullscreen: false
+      fullscreen: false,
+      modal: null
     };
-    return _this9;
+    return _this10;
   }
 
   _createClass(App, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var _this10 = this;
+      var _this11 = this;
 
       var appDOM = _reactDom2.default.findDOMNode(this.refs.app);
       var fullscreenChangeEvent = function (e) {
-        _this10.setState({
-          fullscreen: !_this10.state.fullscreen
+        _this11.setState({
+          fullscreen: !_this11.state.fullscreen
         });
       }.bind(this);
 
@@ -877,7 +907,7 @@ var App = function (_React$Component4) {
       appDOM.addEventListener('MSFullscreenChange', fullscreenChangeEvent);
 
       window.addEventListener('resize', function (e) {
-        _this10.setState({
+        _this11.setState({
           windowWidth: window.innerWidth,
           windowHeight: window.innerHeight
         });
@@ -891,7 +921,7 @@ var App = function (_React$Component4) {
   }, {
     key: 'render',
     value: function render() {
-      var _this11 = this;
+      var _this12 = this;
 
       return _react2.default.createElement(
         'div',
@@ -915,7 +945,7 @@ var App = function (_React$Component4) {
               'button',
               { className: 'app__pencil ' + (this.state.settings.drawMode === 'pencil' ? '' : 'disabled'),
                 onClick: function () {
-                  return _this11._onSettingsChange({ drawMode: 'pencil' });
+                  return _this12._onSettingsChange({ drawMode: 'pencil' });
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-pencil', 'aria-hidden': 'true' })
@@ -924,7 +954,7 @@ var App = function (_React$Component4) {
               'button',
               { className: 'app__eraser ' + (this.state.settings.drawMode === 'eraser' ? '' : 'disabled'),
                 onClick: function () {
-                  return _this11._onSettingsChange({ drawMode: 'eraser' });
+                  return _this12._onSettingsChange({ drawMode: 'eraser' });
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-eraser', 'aria-hidden': 'true' })
@@ -936,8 +966,43 @@ var App = function (_React$Component4) {
           onSettingsChange: this._onSettingsChange.bind(this),
           onGenerateButtonClick: this._onGenerateButtonClick.bind(this),
           onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this)
-        })
+        }),
+        this.state.modal
       );
+    }
+  }, {
+    key: 'popupSaveModal',
+    value: function popupSaveModal(objectURL) {
+      var modal = _react2.default.createElement(
+        Modal,
+        { className: 'save-modal',
+          onCloseButtonClick: this._onCloseButtonClick.bind(this) },
+        _react2.default.createElement(
+          'h3',
+          null,
+          '作成完了'
+        ),
+        _react2.default.createElement('img', { className: 'save-modal__img',
+          src: objectURL,
+          alt: 'SSR_sign' }),
+        _react2.default.createElement(
+          'a',
+          { href: objectURL, download: 'SSR_sign.png' },
+          _react2.default.createElement(
+            'button',
+            null,
+            '画像をダウンロード'
+          )
+        ),
+        _react2.default.createElement(
+          'p',
+          null,
+          'ボタンを押してもダウンロードできないときは、上の画像を右クリックやロングタップで直接保存することもできます。'
+        )
+      );
+      this.setState({
+        modal: modal
+      });
     }
   }, {
     key: '_onSettingsChange',
@@ -950,7 +1015,7 @@ var App = function (_React$Component4) {
     key: '_onGenerateButtonClick',
     value: function _onGenerateButtonClick() {
       (0, _co2.default)(regeneratorRuntime.mark(function _callee3() {
-        var canvas;
+        var canvas, objectURL;
         return regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
@@ -961,9 +1026,14 @@ var App = function (_React$Component4) {
               case 2:
                 canvas = _context3.sent;
                 _context3.next = 5;
-                return saveCanvas(canvas, 'test.png');
+                return canvasToObjectURL(canvas);
 
               case 5:
+                objectURL = _context3.sent;
+
+                this.popupSaveModal.bind(this)(objectURL);
+
+              case 7:
               case 'end':
                 return _context3.stop();
             }
@@ -998,6 +1068,13 @@ var App = function (_React$Component4) {
           document.msExitFullScreen();
         }
       }
+    }
+  }, {
+    key: '_onCloseButtonClick',
+    value: function _onCloseButtonClick() {
+      this.setState({
+        modal: null
+      });
     }
   }]);
 
@@ -28229,7 +28306,7 @@ module.exports = require('./lib/React');
 },{"./lib/React":355}],468:[function(require,module,exports){
 module.exports={
   "name": "ssrgen",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/index.js",
