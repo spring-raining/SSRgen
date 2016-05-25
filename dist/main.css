@@ -475,3 +475,45 @@ ul.sidebar__choice {
 
 .share-count {
   margin-left: 6px; }
+
+.modal-bg {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background-color: rgba(255, 255, 255, 0.3); }
+
+.modal {
+  position: absolute;
+  top: 60px;
+  bottom: 60px;
+  left: 60px;
+  right: 60px;
+  margin: auto;
+  padding: 16px;
+  max-width: 600px;
+  max-height: 500px;
+  overflow: auto;
+  background-color: white;
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  border-radius: 2px; }
+
+.modal-close, .modal-close:hover {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: transparent;
+  color: black;
+  box-shadow: none;
+  width: 60px;
+  height: 60px;
+  font-size: 26px; }
+
+.save-modal h3 {
+  margin: 0; }
+
+.save-modal__img {
+  width: 480px;
+  padding: 16px 0;
+  display: block; }
