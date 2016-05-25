@@ -3,7 +3,9 @@
 @import "normalize";
 
 body {
-  background-color: #000000;
+  background-color: #b3b5bd;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button {
@@ -48,6 +50,11 @@ button {
   border-radius: 48px;
 }
 
+.canvas__wrapper {
+  position: absolute;
+  box-shadow: 0px 10px 40px 10px rgba(0, 0, 0, 0.4);
+}
+
 .canvas__mouse-tracker {
   cursor: crosshair;
 }
@@ -55,22 +62,33 @@ button {
 .sidebar {
   position: absolute;
   top: 0;
-  background-color: rgba(255,255,255,0.8);
   bottom: 0;
   left: 0;
-  width: 200px;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.09, 0.47, 0.36, 1);
 
   &.hidden {
     transform: translate3d(-200px, 0, 0);
   }
 }
 
+.sidebar__content {
+  position: absolute;
+  top: 48px;
+  bottom: 0;
+  left: 0;
+  width: 200px;
+  overflow-y: auto;
+  background-color: rgba(255,255,255,0.8);
+}
+
 .sidebar__switch {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 24px;
   line-height: 24px;
   padding: 12px;
-  width: 240px;
+  width: 230px;
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
   color: #ebebeb;
   background-color: #4a73f0;
@@ -91,4 +109,40 @@ ul.sidebar__choice {
     margin: 6px 0;
     cursor: pointer;
   }
+}
+
+.sidebar__footnote {
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.sidebar__share {
+  display: flex;
+  & > * {
+    flex-grow: 1;
+  }
+}
+
+.share-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  border-radius: 32px;
+
+  &.twitter {
+    background-color: #55ACEE;
+  }
+
+  &.facebook {
+    background-color: #365899;
+  }
+
+  &.google-plus {
+    background-color: #d32f2f;
+  }
+}
+
+.share-count {
+  margin-left: 6px;
 }
