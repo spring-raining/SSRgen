@@ -4,6 +4,8 @@
 // The drawing algorithm is inspired by
 // http://perfectionkills.com/exploring-canvas-drawing-techniques/
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 require('babel-polyfill');
@@ -132,35 +134,35 @@ var Layer = function (_React$Component) {
     }
   }, {
     key: 'componentDidUpdate',
-    value: function componentDidUpdate() {
-      var _this3 = this;
-
+    value: function componentDidUpdate(prevProps, prevState) {
       //console.log(this.state.commandQueue, this.state.runningCommand);
+      if (this.state.commandQueue.length > 0 && !this.state.runningCommand) {
+        this.setState({
+          commandQueue: this.state.commandQueue.slice(1),
+          runningCommand: this.state.commandQueue[0]
+        });
+      }
       if (this.state.runningCommand) {
         (0, _co2.default)(regeneratorRuntime.mark(function _callee() {
           return regeneratorRuntime.wrap(function _callee$(_context) {
             while (1) {
               switch (_context.prev = _context.next) {
                 case 0:
-                  this.state.runningCommand(this.state.ctx);
+                  _context.next = 2;
+                  return this.state.runningCommand(this.state.ctx);
 
-                case 1:
+                case 2:
+                  this.setState({
+                    runningCommand: null
+                  });
+
+                case 3:
                 case 'end':
                   return _context.stop();
               }
             }
           }, _callee, this);
-        }).bind(this)).then(function () {
-          _this3.setState({
-            runningCommand: null
-          });
-        }.bind(this));
-      }
-      if (this.state.commandQueue.length > 0 && !this.state.runningCommand) {
-        this.setState({
-          commandQueue: this.state.commandQueue.slice(1),
-          runningCommand: this.state.commandQueue[0]
-        });
+        }).bind(this));
       }
     }
   }, {
@@ -169,7 +171,10 @@ var Layer = function (_React$Component) {
       return _react2.default.createElement('canvas', { ref: 'canvas',
         width: '1280',
         height: '720',
-        style: { position: 'absolute' }
+        style: {
+          position: 'absolute',
+          opacity: this.props.visible ? 1 : 0
+        }
       });
     }
   }]);
@@ -179,11 +184,13 @@ var Layer = function (_React$Component) {
 
 Layer.propTypes = {
   initialize: _react2.default.PropTypes.func,
-  command: _react2.default.PropTypes.func
+  command: _react2.default.PropTypes.func,
+  visible: _react2.default.PropTypes.bool.isRequired
 };
 Layer.defaultProps = {
   initialize: null,
-  command: null
+  command: null,
+  visible: true
 };
 
 var Canvas = function (_React$Component2) {
@@ -192,39 +199,67 @@ var Canvas = function (_React$Component2) {
   function Canvas(props) {
     _classCallCheck(this, Canvas);
 
-    var _this4 = _possibleConstructorReturn(this, Object.getPrototypeOf(Canvas).call(this, props));
+    var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(Canvas).call(this, props));
 
-    _this4.state = {
+    _this3.state = {
       mousePos: null,
       topLayerCommand: null,
       topLayerPencilSize: 8,
+      topShadowLayerCommand: null,
       bottomLayerCommand: null,
       bottomLayerPencilSize: 20
     };
-    return _this4;
+    return _this3;
   }
 
   _createClass(Canvas, [{
+    key: 'componentWillUpdate',
+    value: function componentWillUpdate(nextProps, nextState) {
+      var _this4 = this;
+
+      if (nextProps.settings.pencilColor !== this.props.settings.pencilColor) {
+        (function () {
+          var pencilBG = _this4.getPencilBG.bind(_this4)(nextProps.settings.pencilColor);
+          _this4.setState({
+            bottomLayerCommand: function bottomLayerCommand(ctx) {
+              return new Promise(function (resolve) {
+                ctx.globalCompositeOperation = 'source-in';
+                ctx.drawImage(pencilBG, 0, 0);
+                resolve(ctx);
+              });
+            }
+          });
+        })();
+      }
+    }
+  }, {
     key: 'render',
     value: function render() {
       var _this5 = this;
 
       return _react2.default.createElement(
         'div',
-        { className: 'canvas-wrapper',
+        { className: 'canvas__wrapper',
           style: { position: 'relative', width: '1280px', height: '720px' } },
         _react2.default.createElement(Layer, { initialize: function initialize(ctx) {
             ctx.drawImage(_this5.props.assets.BG, 0, 0);
-          } }),
+          },
+          visible: this.props.settings.showBG
+        }),
         _react2.default.createElement(Layer, { command: this.state.bottomLayerCommand }),
+        _react2.default.createElement(Layer, { command: this.state.topShadowLayerCommand }),
         _react2.default.createElement(Layer, { command: this.state.topLayerCommand }),
         _react2.default.createElement(Layer, { initialize: function initialize(ctx) {
             ctx.drawImage(_this5.props.assets.ORB, 0, 0);
-          } }),
+          },
+          visible: this.props.settings.showOrb
+        }),
         _react2.default.createElement(Layer, { initialize: function initialize(ctx) {
             ctx.drawImage(_this5.props.assets.FLARE, 0, 0);
-          } }),
-        _react2.default.createElement('div', { 'class': 'canvas-event-handler',
+          },
+          visible: this.props.settings.showFlare
+        }),
+        _react2.default.createElement('div', { className: 'canvas__mouse-tracker',
           style: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
           onMouseDown: this._onCanvasMouseDown.bind(this),
           onMouseMove: this._onCanvasMouseMove.bind(this),
@@ -235,6 +270,11 @@ var Canvas = function (_React$Component2) {
           onTouchEnd: this._onCanvasMouseUp.bind(this)
         })
       );
+    }
+  }, {
+    key: 'getPencilBG',
+    value: function getPencilBG(name) {
+      return name === 'cute' ? this.props.assets.CUTE_BG : name === 'cool' ? this.props.assets.COOL_BG : name === 'passion' ? this.props.assets.PASSION_BG : null;
     }
   }, {
     key: '_onCanvasMouseDown',
@@ -251,22 +291,62 @@ var Canvas = function (_React$Component2) {
       var currentPoint = { x: e.clientX, y: e.clientY };
 
       if (this.state.mousePos) {
-        (function () {
+        var _ret2 = function () {
           var lastPoint = { x: _this6.state.mousePos.x, y: _this6.state.mousePos.y };
+          var pencilBG = _this6.getPencilBG.bind(_this6)(_this6.props.settings.pencilColor);
 
-          _this6.setState({
-            topLayerCommand: function topLayerCommand(ctx) {
+          if (currentPoint.x === lastPoint.x && currentPoint.y === lastPoint.y) {
+            return {
+              v: void 0
+            };
+          }
+
+          var topLayerCommand = function topLayerCommand(ctx) {
+            return new Promise(function (resolve) {
+              ctx.globalCompositeOperation = 'source-over';
               draw(ctx, _this6.props.assets.PENCIL_1, lastPoint, currentPoint, _this6.state.topLayerPencilSize, _this6.state.topLayerPencilSize);
-            },
-            bottomLayerCommand: function bottomLayerCommand(ctx) {
+              resolve(ctx);
+            });
+          };
+
+          var topShadowLayerCommand = function topShadowLayerCommand(ctx) {
+            return new Promise(function (resolve) {
+              ctx.globalCompositeOperation = 'source-over';
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+              draw(ctx, _this6.props.assets.PENCIL_1, lastPoint, currentPoint, _this6.state.topLayerPencilSize, _this6.state.topLayerPencilSize);
+              resolve(ctx);
+            });
+          };
+
+          var bottomLayerCommand = function bottomLayerCommand(ctx) {
+            return new Promise(function (resolve) {
               ctx.globalCompositeOperation = 'source-over';
               draw(ctx, _this6.props.assets.PENCIL_1, lastPoint, currentPoint, _this6.state.bottomLayerPencilSize, _this6.state.bottomLayerPencilSize);
+
               ctx.globalCompositeOperation = 'source-in';
-              ctx.drawImage(_this6.props.assets.CUTE_BG, 0, 0);
-            },
+              ctx.drawImage(pencilBG, 0, 0);
+              resolve(ctx);
+            });
+          };
+
+          var eraserCommand = function eraserCommand(ctx) {
+            return new Promise(function (resolve) {
+              ctx.globalCompositeOperation = 'destination-out';
+              draw(ctx, _this6.props.assets.PENCIL_1, lastPoint, currentPoint, _this6.state.bottomLayerPencilSize, _this6.state.bottomLayerPencilSize);
+              resolve(ctx);
+            });
+          };
+
+          _this6.setState({
+            topLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topLayerCommand,
+            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
+            bottomLayerCommand: !_this6.props.settings.enableBottomLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : bottomLayerCommand,
             mousePos: currentPoint
           });
-        })();
+        }();
+
+        if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
       }
     }
   }, {
@@ -312,28 +392,58 @@ var Sidebar = function (_React$Component3) {
         _react2.default.createElement(
           'div',
           { className: 'sidebar__section' },
+          _react2.default.createElement(
+            'button',
+            { onClick: this.props.onFullscreenButtonClick },
+            this.props.fullscreen ? '全画面を中止' : '全画面で編集'
+          )
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: 'sidebar__section' },
           'ペン色'
         ),
         _react2.default.createElement(
           'ul',
           { className: 'sidebar__choice' },
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ pencilColor: 'cute' }) },
-            _react2.default.createElement('input', { type: 'radio', checked: this.props.settings.pencilColor === 'cute' }),
-            'キュート'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'radio',
+                checked: this.props.settings.pencilColor === 'cute',
+                onChange: this._onSettingsChangeClick.bind(this)({ pencilColor: 'cute' })
+              }),
+              'キュート'
+            )
           ),
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ pencilColor: 'cool' }) },
-            _react2.default.createElement('input', { type: 'radio', checked: this.props.settings.pencilColor === 'cool' }),
-            'クール'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'radio',
+                checked: this.props.settings.pencilColor === 'cool',
+                onChange: this._onSettingsChangeClick.bind(this)({ pencilColor: 'cool' })
+              }),
+              'クール'
+            )
           ),
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ pencilColor: 'passion' }) },
-            _react2.default.createElement('input', { type: 'radio', checked: this.props.settings.pencilColor === 'passion' }),
-            'パッション'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'radio',
+                checked: this.props.settings.pencilColor === 'passion',
+                onChange: this._onSettingsChangeClick.bind(this)({ pencilColor: 'passion' })
+              }),
+              'パッション'
+            )
           )
         ),
         _react2.default.createElement(
@@ -345,16 +455,30 @@ var Sidebar = function (_React$Component3) {
           'ul',
           { className: 'sidebar__choice' },
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ enableTopLayer: !this.props.settings.enableTopLayer }) },
-            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.enableTopLayer }),
-            '前面を描く'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'checkbox',
+                checked: this.props.settings.enableTopLayer,
+                onChange: this._onSettingsChangeClick({ enableTopLayer: !this.props.settings.enableTopLayer })
+              }),
+              '前面を描く'
+            )
           ),
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ enableBottomLayer: !this.props.settings.enableBottomLayer }) },
-            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.enableBottomLayer }),
-            '背面を描く'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'checkbox',
+                checked: this.props.settings.enableBottomLayer,
+                onChange: this._onSettingsChangeClick({ enableBottomLayer: !this.props.settings.enableBottomLayer })
+              }),
+              '背面を描く'
+            )
           )
         ),
         _react2.default.createElement(
@@ -366,22 +490,43 @@ var Sidebar = function (_React$Component3) {
           'ul',
           { className: 'sidebar__choice' },
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ showBG: !this.props.settings.showBG }) },
-            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.showBG }),
-            '背景を表示'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'checkbox',
+                checked: this.props.settings.showBG,
+                onChange: this._onSettingsChangeClick.bind(this)({ showBG: !this.props.settings.showBG })
+              }),
+              '背景を表示'
+            )
           ),
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ showOrb: !this.props.settings.showOrb }) },
-            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.showOrb }),
-            'オーブを表示'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'checkbox',
+                checked: this.props.settings.showOrb,
+                onChange: this._onSettingsChangeClick.bind(this)({ showOrb: !this.props.settings.showOrb })
+              }),
+              'オーブを表示'
+            )
           ),
           _react2.default.createElement(
-            'li',
-            { onClick: this._onSettingsChangeClick({ showFlare: !this.props.settings.showFlare }) },
-            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.showFlare }),
-            'フレアを表示'
+            'label',
+            null,
+            _react2.default.createElement(
+              'li',
+              null,
+              _react2.default.createElement('input', { type: 'checkbox',
+                checked: this.props.settings.showFlare,
+                onChange: this._onSettingsChangeClick.bind(this)({ showFlare: !this.props.settings.showFlare })
+              }),
+              'フレアを表示'
+            )
           )
         )
       );
@@ -396,8 +541,10 @@ var Sidebar = function (_React$Component3) {
   }, {
     key: '_onSettingsChangeClick',
     value: function _onSettingsChangeClick(changes) {
+      var _this8 = this;
+
       return function () {
-        return changes;
+        return _this8.props.onSettingsChange(changes);
       };
     }
   }]);
@@ -411,37 +558,119 @@ var App = function (_React$Component4) {
   function App(props) {
     _classCallCheck(this, App);
 
-    var _this8 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
+    var _this9 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
 
-    _this8.state = {
+    _this9.state = {
       settings: {
+        drawMode: 'pencil',
         pencilColor: 'cute',
         enableTopLayer: true,
         enableBottomLayer: true,
         showBG: true,
         showOrb: true,
         showFlare: true
-      }
+      },
+      fullscreen: false
     };
-    return _this8;
+    return _this9;
   }
 
   _createClass(App, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var _this10 = this;
+
+      var appDOM = _reactDom2.default.findDOMNode(this.refs.app);
+      var fullscreenChangeEvent = function (e) {
+        _this10.setState({
+          fullscreen: !_this10.state.fullscreen
+        });
+      }.bind(this);
+
+      appDOM.addEventListener('fullscreenchange', fullscreenChangeEvent);
+      appDOM.addEventListener('webkitfullscreenchange', fullscreenChangeEvent);
+      appDOM.addEventListener('mozfullscreenchange', fullscreenChangeEvent);
+      appDOM.addEventListener('MSFullscreenChange', fullscreenChangeEvent);
+    }
+  }, {
     key: 'render',
     value: function render() {
+      var _this11 = this;
+
       return _react2.default.createElement(
         'div',
-        { className: 'app' },
-        _react2.default.createElement(Canvas, { assets: this.props.assets }),
+        { className: 'app',
+          ref: 'app' },
+        _react2.default.createElement(
+          'div',
+          { style: { position: 'relative' } },
+          _react2.default.createElement(Canvas, { assets: this.props.assets,
+            settings: this.state.settings
+          }),
+          _react2.default.createElement(
+            'div',
+            { style: { position: 'absolute', bottom: 0, right: 0 } },
+            _react2.default.createElement(
+              'button',
+              { className: 'app__pencil ' + (this.state.settings.drawMode === 'pencil' ? '' : 'disabled'),
+                onClick: function () {
+                  return _this11._onSettingsChange({ drawMode: 'pencil' });
+                }.bind(this)
+              },
+              'P'
+            ),
+            _react2.default.createElement(
+              'button',
+              { className: 'app__eraser ' + (this.state.settings.drawMode === 'eraser' ? '' : 'disabled'),
+                onClick: function () {
+                  return _this11._onSettingsChange({ drawMode: 'eraser' });
+                }.bind(this)
+              },
+              'E'
+            )
+          )
+        ),
         _react2.default.createElement(Sidebar, { settings: this.state.settings,
-          onSettingsChange: this._onSettingsChange.bind(this)
+          fullscreen: this.state.fullscreen,
+          onSettingsChange: this._onSettingsChange.bind(this),
+          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this)
         })
       );
     }
   }, {
     key: '_onSettingsChange',
     value: function _onSettingsChange(changes) {
-      this.setState(changes);
+      this.setState({
+        settings: Object.assign({}, this.state.settings, changes)
+      });
+    }
+  }, {
+    key: '_onFullscreenButtonClick',
+    value: function _onFullscreenButtonClick() {
+      if (!this.state.fullscreen) {
+        var app = _reactDom2.default.findDOMNode(this.refs.app);
+        if (app.reqestFullscreen) {
+          app.requestFullscreen();
+        } else if (app.webkitRequestFullscreen) {
+          app.webkitRequestFullscreen();
+        } else if (app.mozRequestFullScreen) {
+          app.mozRequestFullScreen();
+        } else if (app.msRequestFullscreen) {
+          app.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.cancelFullScreen) {
+          document.cancelFullScreen();
+        } else if (document.webkitCancelFullScreen) {
+          document.webkitCancelFullScreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullScreen();
+        }
+      }
     }
   }]);
 

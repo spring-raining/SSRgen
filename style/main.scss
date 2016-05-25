@@ -6,8 +6,50 @@ body {
   background-color: #000000;
 }
 
+button {
+  transition: all 0.2s ease 0s;
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  color: #ebebeb;
+  background-color: #4a73f0;
+  border: 0;
+  border-radius: 2px;
+  text-align: center;
+  font-size: 14px;
+  padding: 8px 14px;
+  vertical-align: middle;
+  cursor: pointer;
+  outline: none;
+
+  &.disabled {
+    background-color: #787e90;
+  }
+
+  &:hover {
+    box-shadow: 0 17px 50px 0 rgba(0, 0, 0, 0.19), 0 12px 15px 0 rgba(0, 0, 0, 0.24);
+    background-color: #6285f2;
+    cursor: pointer;
+
+  }
+
+  &:hover:active {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 .app {
   position: relative;
+}
+
+.app__pencil,
+.app__eraser {
+  margin: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 48px;
+}
+
+.canvas__mouse-tracker {
+  cursor: crosshair;
 }
 
 .sidebar {
@@ -20,7 +62,7 @@ body {
   transition: transform 0.2s ease;
 
   &.hidden {
-    transform: translate3d(-190px, 0, 0);
+    transform: translate3d(-200px, 0, 0);
   }
 }
 
@@ -29,7 +71,9 @@ body {
   line-height: 24px;
   padding: 12px;
   width: 240px;
-  background-color: white;
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  color: #ebebeb;
+  background-color: #4a73f0;
   border-radius: 0 20px 20px 0;
   cursor: pointer;
 }
