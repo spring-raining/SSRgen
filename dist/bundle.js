@@ -216,17 +216,14 @@ var Canvas = function (_React$Component2) {
         _react2.default.createElement(Layer, { initialize: function initialize(ctx) {
             ctx.drawImage(_this5.props.assets.BG, 0, 0);
           } }),
-        _react2.default.createElement(Layer, { command: this.state.bottomLayerCommand
-        }),
-        _react2.default.createElement(Layer, { command: this.state.topLayerCommand
-        }),
+        _react2.default.createElement(Layer, { command: this.state.bottomLayerCommand }),
+        _react2.default.createElement(Layer, { command: this.state.topLayerCommand }),
         _react2.default.createElement(Layer, { initialize: function initialize(ctx) {
             ctx.drawImage(_this5.props.assets.ORB, 0, 0);
           } }),
         _react2.default.createElement(Layer, { initialize: function initialize(ctx) {
             ctx.drawImage(_this5.props.assets.FLARE, 0, 0);
           } }),
-        '/>',
         _react2.default.createElement('div', { 'class': 'canvas-event-handler',
           style: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
           onMouseDown: this._onCanvasMouseDown.bind(this),
@@ -286,13 +283,147 @@ var Canvas = function (_React$Component2) {
   return Canvas;
 }(_react2.default.Component);
 
-var App = function (_React$Component3) {
-  _inherits(App, _React$Component3);
+var Sidebar = function (_React$Component3) {
+  _inherits(Sidebar, _React$Component3);
 
-  function App() {
+  function Sidebar(props) {
+    _classCallCheck(this, Sidebar);
+
+    var _this7 = _possibleConstructorReturn(this, Object.getPrototypeOf(Sidebar).call(this, props));
+
+    _this7.state = {
+      hidden: true
+    };
+    return _this7;
+  }
+
+  _createClass(Sidebar, [{
+    key: 'render',
+    value: function render() {
+      return _react2.default.createElement(
+        'div',
+        { className: 'sidebar ' + (this.state.hidden ? 'hidden' : '') },
+        _react2.default.createElement(
+          'div',
+          { className: 'sidebar__switch',
+            onClick: this._onSwitchClick.bind(this) },
+          'SSR Generator'
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: 'sidebar__section' },
+          'ペン色'
+        ),
+        _react2.default.createElement(
+          'ul',
+          { className: 'sidebar__choice' },
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ pencilColor: 'cute' }) },
+            _react2.default.createElement('input', { type: 'radio', checked: this.props.settings.pencilColor === 'cute' }),
+            'キュート'
+          ),
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ pencilColor: 'cool' }) },
+            _react2.default.createElement('input', { type: 'radio', checked: this.props.settings.pencilColor === 'cool' }),
+            'クール'
+          ),
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ pencilColor: 'passion' }) },
+            _react2.default.createElement('input', { type: 'radio', checked: this.props.settings.pencilColor === 'passion' }),
+            'パッション'
+          )
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: 'sidebar__section' },
+          'ペンレイヤー'
+        ),
+        _react2.default.createElement(
+          'ul',
+          { className: 'sidebar__choice' },
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ enableTopLayer: !this.props.settings.enableTopLayer }) },
+            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.enableTopLayer }),
+            '前面を描く'
+          ),
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ enableBottomLayer: !this.props.settings.enableBottomLayer }) },
+            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.enableBottomLayer }),
+            '背面を描く'
+          )
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: 'sidebar__section' },
+          'エフェクト'
+        ),
+        _react2.default.createElement(
+          'ul',
+          { className: 'sidebar__choice' },
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ showBG: !this.props.settings.showBG }) },
+            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.showBG }),
+            '背景を表示'
+          ),
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ showOrb: !this.props.settings.showOrb }) },
+            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.showOrb }),
+            'オーブを表示'
+          ),
+          _react2.default.createElement(
+            'li',
+            { onClick: this._onSettingsChangeClick({ showFlare: !this.props.settings.showFlare }) },
+            _react2.default.createElement('input', { type: 'checkbox', checked: this.props.settings.showFlare }),
+            'フレアを表示'
+          )
+        )
+      );
+    }
+  }, {
+    key: '_onSwitchClick',
+    value: function _onSwitchClick() {
+      this.setState({
+        hidden: !this.state.hidden
+      });
+    }
+  }, {
+    key: '_onSettingsChangeClick',
+    value: function _onSettingsChangeClick(changes) {
+      return function () {
+        return changes;
+      };
+    }
+  }]);
+
+  return Sidebar;
+}(_react2.default.Component);
+
+var App = function (_React$Component4) {
+  _inherits(App, _React$Component4);
+
+  function App(props) {
     _classCallCheck(this, App);
 
-    return _possibleConstructorReturn(this, Object.getPrototypeOf(App).apply(this, arguments));
+    var _this8 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
+
+    _this8.state = {
+      settings: {
+        pencilColor: 'cute',
+        enableTopLayer: true,
+        enableBottomLayer: true,
+        showBG: true,
+        showOrb: true,
+        showFlare: true
+      }
+    };
+    return _this8;
   }
 
   _createClass(App, [{
@@ -301,8 +432,16 @@ var App = function (_React$Component3) {
       return _react2.default.createElement(
         'div',
         { className: 'app' },
-        _react2.default.createElement(Canvas, { assets: this.props.assets })
+        _react2.default.createElement(Canvas, { assets: this.props.assets }),
+        _react2.default.createElement(Sidebar, { settings: this.state.settings,
+          onSettingsChange: this._onSettingsChange.bind(this)
+        })
       );
+    }
+  }, {
+    key: '_onSettingsChange',
+    value: function _onSettingsChange(changes) {
+      this.setState(changes);
     }
   }]);
 

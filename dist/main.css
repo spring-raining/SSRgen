@@ -365,4 +365,38 @@ textarea {
   /* 2 */ }
 
 body {
-  background-color: #dddddd; }
+  background-color: #000000; }
+
+.app {
+  position: relative; }
+
+.sidebar {
+  position: absolute;
+  top: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  bottom: 0;
+  left: 0;
+  width: 200px;
+  transition: transform 0.2s ease; }
+  .sidebar.hidden {
+    transform: translate3d(-190px, 0, 0); }
+
+.sidebar__switch {
+  height: 24px;
+  line-height: 24px;
+  padding: 12px;
+  width: 240px;
+  background-color: white;
+  border-radius: 0 20px 20px 0;
+  cursor: pointer; }
+
+.sidebar__section {
+  padding: 12px 12px 0; }
+
+ul.sidebar__choice {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px; }
+  ul.sidebar__choice li {
+    margin: 6px 0;
+    cursor: pointer; }
