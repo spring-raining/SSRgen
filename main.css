@@ -364,6 +364,11 @@ textarea {
   font: inherit;
   /* 2 */ }
 
+html, body, #renderpoint {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; }
+
 body {
   background-color: #b3b5bd;
   -webkit-font-smoothing: antialiased;
@@ -486,10 +491,10 @@ ul.sidebar__choice {
 
 .modal {
   position: absolute;
-  top: 60px;
-  bottom: 60px;
-  left: 60px;
-  right: 60px;
+  top: 15px;
+  bottom: 15px;
+  left: 15px;
+  right: 15px;
   margin: auto;
   padding: 16px;
   max-width: 600px;
