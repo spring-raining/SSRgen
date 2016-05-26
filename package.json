@@ -10,6 +10,13 @@
     "build-css": "node-sass -r style -o dist"
   },
   "author": "spring-raining",
+  "contributors": [
+    {
+      "name": "susisu",
+      "email": "susisu2413@yahoo.co.jp",
+      "url": "https://susisu.github.io/"
+    }
+  ],
   "license": "MIT",
   "homepage": "http://ssrgen.harusamex.com",
   "repository": {
