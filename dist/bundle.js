@@ -28643,7 +28643,7 @@ module.exports = require('./lib/React');
 },{"./lib/React":356}],469:[function(require,module,exports){
 module.exports={
   "name": "ssrgen",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/index.js",
