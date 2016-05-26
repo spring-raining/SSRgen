@@ -595,6 +595,8 @@ var Canvas = function (_React$Component2) {
   }, {
     key: '_onCanvasTouchMove',
     value: function _onCanvasTouchMove(e) {
+      e.preventDefault();
+
       var touch = e.changedTouches[0];
       this._onCanvasMouseMove.bind(this)({
         clientX: touch.pageX,
@@ -10128,31 +10130,17 @@ module.exports = require('react/lib/ReactDOM');
     }
   });
 
-  exports.TwitterCount = React.createClass({
-    displayName: "TwitterCount"
-
-    , mixins: [Count]
-
-    , constructUrl: function () {
-      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=all";
-    }
-
-    , extractCount: function (data) {
-      return data.shares.twitter || 0;
-    }
-  });
-
   exports.GooglePlusCount = React.createClass({
     displayName: "GooglePlusCount"
 
     , mixins: [Count]
 
     , constructUrl: function () {
-      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=google";
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url);
     }
 
     , extractCount: function (data) {
-      return data.shares.google || 0;
+      return data.shares.google;
     }
   });
 
@@ -10232,20 +10220,6 @@ module.exports = require('react/lib/ReactDOM');
 
     , extractCount: function (data) {
       return data.response.note_count || 0;
-    }
-  });
-
-  exports.PocketCount = React.createClass({
-    displayName: "PocketCount"
-
-    , mixins: [Count]
-
-    , constructUrl: function () {
-      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=pocket";
-    }
-
-    , extractCount: function (data) {
-      return data.shares.pocket || 0;
     }
   });
 
@@ -10372,16 +10346,6 @@ module.exports = require('react/lib/ReactDOM');
 
     , constructUrl: function () {
       return "https://www.tumblr.com/widgets/share/tool?posttype=link&title=" + encodeURIComponent(this.props.message) + "&content=" + encodeURIComponent(this.props.url) + "&canonicalUrl=" + encodeURIComponent(this.props.url) + "&shareSource=tumblr_share_button";
-    }
-  });
-
-  exports.PocketButton = React.createClass({
-    displayName: "PocketButton"
-
-    , mixins: [Button, DefaultBlankTarget]
-
-    , constructUrl: function () {
-      return "https://getpocket.com/save?url=" + encodeURIComponent(this.props.url) + "&title=" + encodeURIComponent(this.props.message);
     }
   });
 
