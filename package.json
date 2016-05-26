@@ -1,6 +1,6 @@
 {
   "name": "ssrgen",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/index.js",
