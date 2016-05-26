@@ -116,6 +116,12 @@ var Layer = function (_React$Component) {
       commandQueue: [],
       runningCommand: null
     };
+    _this.undoBuffer = document.createElement('canvas');
+    _this.undoBuffer.width = 1280;
+    _this.undoBuffer.height = 720;
+    _this.swapBuffer = document.createElement('canvas');
+    _this.swapBuffer.width = 1280;
+    _this.swapBuffer.height = 720;
     return _this;
   }
 
@@ -139,8 +145,8 @@ var Layer = function (_React$Component) {
       }
     }
   }, {
-    key: 'componentWillUpdate',
-    value: function componentWillUpdate(nextProps, nextState) {
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps) {
       if (nextProps.command && nextProps.command !== this.props.command) {
         this.setState({
           commandQueue: this.state.commandQueue.concat([nextProps.command])
@@ -195,6 +201,40 @@ var Layer = function (_React$Component) {
     key: 'getCanvas',
     value: function getCanvas() {
       return _reactDom2.default.findDOMNode(this.refs.canvas);
+    }
+  }, {
+    key: 'saveUndoBuffer',
+    value: function saveUndoBuffer() {
+      var ctx = this.undoBuffer.getContext('2d');
+      ctx.globalCompositeOperation = "source-over";
+      ctx.clearRect(0, 0, 1280, 720);
+      ctx.drawImage(this.getCanvas(), 0, 0);
+    }
+  }, {
+    key: 'retrieveUndoBuffer',
+    value: function retrieveUndoBuffer() {
+      this.state.ctx.globalCompositeOperation = "source-over";
+      this.state.ctx.shadowBlur = 0;
+      this.state.ctx.clearRect(0, 0, 1280, 720);
+      this.state.ctx.drawImage(this.undoBuffer, 0, 0);
+    }
+  }, {
+    key: 'swapUndoBuffer',
+    value: function swapUndoBuffer() {
+      var undoCtx = this.undoBuffer.getContext('2d');
+      var swapCtx = this.swapBuffer.getContext('2d');
+      swapCtx.globalCompositeOperation = "source-over";
+      swapCtx.shadowBlur = 0;
+      swapCtx.clearRect(0, 0, 1280, 720);
+      swapCtx.drawImage(this.getCanvas(), 0, 0);
+      this.state.ctx.globalCompositeOperation = "source-over";
+      this.state.ctx.shadowBlur = 0;
+      this.state.ctx.clearRect(0, 0, 1280, 720);
+      this.state.ctx.drawImage(this.undoBuffer, 0, 0);
+      undoCtx.globalCompositeOperation = "source-over";
+      undoCtx.shadowBlur = 0;
+      undoCtx.clearRect(0, 0, 1280, 720);
+      undoCtx.drawImage(this.swapBuffer, 0, 0);
     }
   }]);
 
@@ -363,8 +403,50 @@ var Canvas = function (_React$Component2) {
       }).bind(this));
     }
   }, {
+    key: 'saveUndoBuffer',
+    value: function saveUndoBuffer() {
+      this.refs.top.saveUndoBuffer();
+      this.refs.topShadow.saveUndoBuffer();
+      this.refs.bottom.saveUndoBuffer();
+    }
+  }, {
+    key: 'retrieveUndoBuffer',
+    value: function retrieveUndoBuffer() {
+      this.refs.top.retrieveUndoBuffer();
+      this.refs.topShadow.retrieveUndoBuffer();
+      this.refs.bottom.retrieveUndoBuffer();
+      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
+      this.setState({
+        bottomLayerCommand: function bottomLayerCommand(ctx) {
+          return new Promise(function (resolve) {
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.drawImage(pencilBG, 0, 0);
+            resolve(ctx);
+          });
+        }
+      });
+    }
+  }, {
+    key: 'swapUndoBuffer',
+    value: function swapUndoBuffer() {
+      this.refs.top.swapUndoBuffer();
+      this.refs.topShadow.swapUndoBuffer();
+      this.refs.bottom.swapUndoBuffer();
+      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
+      this.setState({
+        bottomLayerCommand: function bottomLayerCommand(ctx) {
+          return new Promise(function (resolve) {
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.drawImage(pencilBG, 0, 0);
+            resolve(ctx);
+          });
+        }
+      });
+    }
+  }, {
     key: '_onCanvasMouseDown',
     value: function _onCanvasMouseDown(e) {
+      this.saveUndoBuffer();
       this.setState({
         mousePos: this.getPoint.bind(this)(e)
       });
@@ -523,6 +605,15 @@ var Sidebar = function (_React$Component3) {
               'button',
               { onClick: this.props.onFullscreenButtonClick },
               this.props.fullscreen ? '全画面を中止' : '全画面で編集'
+            )
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: 'sidebar__section' },
+            _react2.default.createElement(
+              'button',
+              { onClick: this.props.onUndoButtonClick },
+              '元に戻す/やり直し'
             )
           ),
           _react2.default.createElement(
@@ -965,7 +1056,8 @@ var App = function (_React$Component5) {
           fullscreen: this.state.fullscreen,
           onSettingsChange: this._onSettingsChange.bind(this),
           onGenerateButtonClick: this._onGenerateButtonClick.bind(this),
-          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this)
+          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this),
+          onUndoButtonClick: this._onUndoButtonClick.bind(this)
         }),
         this.state.modal
       );
@@ -1068,6 +1160,11 @@ var App = function (_React$Component5) {
           document.msExitFullScreen();
         }
       }
+    }
+  }, {
+    key: '_onUndoButtonClick',
+    value: function _onUndoButtonClick() {
+      this.refs.canvas.swapUndoBuffer();
     }
   }, {
     key: '_onCloseButtonClick',
@@ -8186,18 +8283,18 @@ var EventListener = {
    * @param {function} callback Callback function.
    * @return {object} Object with a `remove` method.
    */
-  listen: function (target, eventType, callback) {
+  listen: function listen(target, eventType, callback) {
     if (target.addEventListener) {
       target.addEventListener(eventType, callback, false);
       return {
-        remove: function () {
+        remove: function remove() {
           target.removeEventListener(eventType, callback, false);
         }
       };
     } else if (target.attachEvent) {
       target.attachEvent('on' + eventType, callback);
       return {
-        remove: function () {
+        remove: function remove() {
           target.detachEvent('on' + eventType, callback);
         }
       };
@@ -8212,11 +8309,11 @@ var EventListener = {
    * @param {function} callback Callback function.
    * @return {object} Object with a `remove` method.
    */
-  capture: function (target, eventType, callback) {
+  capture: function capture(target, eventType, callback) {
     if (target.addEventListener) {
       target.addEventListener(eventType, callback, true);
       return {
-        remove: function () {
+        remove: function remove() {
           target.removeEventListener(eventType, callback, true);
         }
       };
@@ -8230,7 +8327,7 @@ var EventListener = {
     }
   },
 
-  registerDefault: function () {}
+  registerDefault: function registerDefault() {}
 };
 
 module.exports = EventListener;
@@ -8354,7 +8451,7 @@ module.exports = camelizeStyleName;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @typechecks
+ * 
  */
 
 var isTextNode = require('./isTextNode');
@@ -8363,10 +8460,6 @@ var isTextNode = require('./isTextNode');
 
 /**
  * Checks if a given DOM node contains or is another DOM node.
- *
- * @param {?DOMNode} outerNode Outer DOM node.
- * @param {?DOMNode} innerNode Inner DOM node.
- * @return {boolean} True if `outerNode` contains or is `innerNode`.
  */
 function containsNode(outerNode, innerNode) {
   if (!outerNode || !innerNode) {
@@ -8377,7 +8470,7 @@ function containsNode(outerNode, innerNode) {
     return false;
   } else if (isTextNode(innerNode)) {
     return containsNode(outerNode, innerNode.parentNode);
-  } else if (outerNode.contains) {
+  } else if ('contains' in outerNode) {
     return outerNode.contains(innerNode);
   } else if (outerNode.compareDocumentPosition) {
     return !!(outerNode.compareDocumentPosition(innerNode) & 16);
@@ -8613,6 +8706,7 @@ module.exports = createNodesFromMarkup;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * 
  */
 
 function makeEmptyFunction(arg) {
@@ -8626,7 +8720,7 @@ function makeEmptyFunction(arg) {
  * primarily useful idiomatically for overridable function endpoints which
  * always need to be callable, since JS lacks a null-call idiom ala Cocoa.
  */
-function emptyFunction() {}
+var emptyFunction = function emptyFunction() {};
 
 emptyFunction.thatReturns = makeEmptyFunction;
 emptyFunction.thatReturnsFalse = makeEmptyFunction(false);
@@ -9067,7 +9161,7 @@ var invariant = require('./invariant');
  * @param {object} obj
  * @return {object}
  */
-var keyMirror = function (obj) {
+var keyMirror = function keyMirror(obj) {
   var ret = {};
   var key;
   !(obj instanceof Object && !Array.isArray(obj)) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'keyMirror(...): Argument must be an object.') : invariant(false) : void 0;
@@ -9105,7 +9199,7 @@ module.exports = keyMirror;
  * 'xa12' in that case. Resolve keys you want to use once at startup time, then
  * reuse those resolutions.
  */
-var keyOf = function (oneKeyObj) {
+var keyOf = function keyOf(oneKeyObj) {
   var key;
   for (key in oneKeyObj) {
     if (!oneKeyObj.hasOwnProperty(key)) {
@@ -9177,6 +9271,7 @@ module.exports = mapObject;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * 
  * @typechecks static-only
  */
 
@@ -9184,9 +9279,6 @@ module.exports = mapObject;
 
 /**
  * Memoizes the return value of a function that accepts one string argument.
- *
- * @param {function} callback
- * @return {function}
  */
 
 function memoizeStringOnly(callback) {
@@ -9247,11 +9339,11 @@ var performanceNow;
  * because of Facebook's testing infrastructure.
  */
 if (performance.now) {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return performance.now();
   };
 } else {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return Date.now();
   };
 }
@@ -9350,7 +9442,7 @@ var emptyFunction = require('./emptyFunction');
 var warning = emptyFunction;
 
 if (process.env.NODE_ENV !== 'production') {
-  warning = function (condition, format) {
+  warning = function warning(condition, format) {
     for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
     }
@@ -9829,17 +9921,31 @@ module.exports = require('react/lib/ReactDOM');
     }
   });
 
+  exports.TwitterCount = React.createClass({
+    displayName: "TwitterCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=all";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.twitter || 0;
+    }
+  });
+
   exports.GooglePlusCount = React.createClass({
     displayName: "GooglePlusCount"
 
     , mixins: [Count]
 
     , constructUrl: function () {
-      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url);
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=google";
     }
 
     , extractCount: function (data) {
-      return data.shares.google;
+      return data.shares.google || 0;
     }
   });
 
@@ -9919,6 +10025,20 @@ module.exports = require('react/lib/ReactDOM');
 
     , extractCount: function (data) {
       return data.response.note_count || 0;
+    }
+  });
+
+  exports.PocketCount = React.createClass({
+    displayName: "PocketCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=pocket";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.pocket || 0;
     }
   });
 
@@ -10045,6 +10165,16 @@ module.exports = require('react/lib/ReactDOM');
 
     , constructUrl: function () {
       return "https://www.tumblr.com/widgets/share/tool?posttype=link&title=" + encodeURIComponent(this.props.message) + "&content=" + encodeURIComponent(this.props.url) + "&canonicalUrl=" + encodeURIComponent(this.props.url) + "&shareSource=tumblr_share_button";
+    }
+  });
+
+  exports.PocketButton = React.createClass({
+    displayName: "PocketButton"
+
+    , mixins: [Button, DefaultBlankTarget]
+
+    , constructUrl: function () {
+      return "https://getpocket.com/save?url=" + encodeURIComponent(this.props.url) + "&title=" + encodeURIComponent(this.props.message);
     }
   });
 
