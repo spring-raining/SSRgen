@@ -47,12 +47,15 @@ var ASSETS = {
   PENCIL_1: 'pencil_1.png',
   PENCIL_2: 'pencil_2.png',
   PENCIL_3: 'pencil_1.png',
-  CUTE_BG: 'cute_bg.png',
-  PASSION_BG: 'passion_bg.png',
-  COOL_BG: 'cool_bg.png',
   BG: 'bg.png',
   ORB: 'orb.png',
   FLARE: 'flare.png'
+};
+
+var GRADIENT = {
+  cute: [{ offset: 0.33, color: 'rgb(255, 138, 232)' }, { offset: 0.67, color: 'rgb(107, 233, 255)' }],
+  passion: [{ offset: 0.33, color: 'rgb(255, 210, 75)' }, { offset: 0.67, color: 'rgb(255, 138, 232)' }],
+  cool: [{ offset: 0.33, color: 'rgb(125, 215, 255)' }, { offset: 0.67, color: 'rgb(255, 229, 133)' }]
 };
 
 var PENCIL_SIZE = {
@@ -313,27 +316,16 @@ var Canvas = function (_React$Component2) {
   _createClass(Canvas, [{
     key: 'componentWillUpdate',
     value: function componentWillUpdate(nextProps, nextState) {
-      var _this4 = this;
-
       if (nextProps.settings.pencilColor !== this.props.settings.pencilColor) {
-        (function () {
-          var pencilBG = _this4.getPencilBG.bind(_this4)(nextProps.settings.pencilColor);
-          _this4.setState({
-            bottomLayerCommand: function bottomLayerCommand(ctx) {
-              return new Promise(function (resolve) {
-                ctx.globalCompositeOperation = 'source-in';
-                ctx.drawImage(pencilBG, 0, 0);
-                resolve(ctx);
-              });
-            }
-          });
-        })();
+        this.setState({
+          bottomLayerCommand: this.drawGradientEffect.bind(this)
+        });
       }
     }
   }, {
     key: 'render',
     value: function render() {
-      var _this5 = this;
+      var _this4 = this;
 
       var scale = Math.min(this.props.windowWidth / 1280, this.props.windowHeight / 720);
       var positionX = (this.props.windowWidth - 1280) / 2;
@@ -348,7 +340,7 @@ var Canvas = function (_React$Component2) {
           } },
         _react2.default.createElement(Layer, { ref: 'BG',
           initialize: function initialize(ctx) {
-            ctx.drawImage(_this5.props.assets.BG, 0, 0);
+            ctx.drawImage(_this4.props.assets.BG, 0, 0);
           },
           visible: this.props.settings.showBG
         }),
@@ -360,13 +352,13 @@ var Canvas = function (_React$Component2) {
           command: this.state.topLayerCommand }),
         _react2.default.createElement(Layer, { ref: 'orb',
           initialize: function initialize(ctx) {
-            ctx.drawImage(_this5.props.assets.ORB, 0, 0);
+            ctx.drawImage(_this4.props.assets.ORB, 0, 0);
           },
           visible: this.props.settings.showOrb
         }),
         _react2.default.createElement(Layer, { ref: 'flare',
           initialize: function initialize(ctx) {
-            ctx.drawImage(_this5.props.assets.FLARE, 0, 0);
+            ctx.drawImage(_this4.props.assets.FLARE, 0, 0);
           },
           visible: this.props.settings.showFlare
         }),
@@ -393,11 +385,6 @@ var Canvas = function (_React$Component2) {
         x: (e.clientX - offsetX) / scale,
         y: (e.clientY - offsetY) / scale
       };
-    }
-  }, {
-    key: 'getPencilBG',
-    value: function getPencilBG(name) {
-      return name === 'cute' ? this.props.assets.CUTE_BG : name === 'cool' ? this.props.assets.COOL_BG : name === 'passion' ? this.props.assets.PASSION_BG : null;
     }
   }, {
     key: 'generate',
@@ -470,15 +457,8 @@ var Canvas = function (_React$Component2) {
       this.refs.top.retrieveUndoBuffer();
       this.refs.topShadow.retrieveUndoBuffer();
       this.refs.bottom.retrieveUndoBuffer();
-      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
       this.setState({
-        bottomLayerCommand: function bottomLayerCommand(ctx) {
-          return new Promise(function (resolve) {
-            ctx.globalCompositeOperation = 'source-in';
-            ctx.drawImage(pencilBG, 0, 0);
-            resolve(ctx);
-          });
-        }
+        bottomLayerCommand: this.drawGradientEffect.bind(this)
       });
     }
   }, {
@@ -487,15 +467,26 @@ var Canvas = function (_React$Component2) {
       this.refs.top.swapUndoBuffer();
       this.refs.topShadow.swapUndoBuffer();
       this.refs.bottom.swapUndoBuffer();
-      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
       this.setState({
-        bottomLayerCommand: function bottomLayerCommand(ctx) {
-          return new Promise(function (resolve) {
-            ctx.globalCompositeOperation = 'source-in';
-            ctx.drawImage(pencilBG, 0, 0);
-            resolve(ctx);
-          });
-        }
+        bottomLayerCommand: this.drawGradientEffect.bind(this)
+      });
+    }
+  }, {
+    key: 'drawGradientEffect',
+    value: function drawGradientEffect(ctx) {
+      var _this5 = this;
+
+      return new Promise(function (resolve) {
+        var bottomGradient = GRADIENT[_this5.props.settings.pencilColor];
+        var grad = ctx.createLinearGradient(0, 0, 0, 720);
+        bottomGradient.forEach(function (g) {
+          grad.addColorStop(g.offset, g.color);
+        });
+
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1280, 720);
+        resolve(ctx);
       });
     }
   }, {
@@ -514,11 +505,10 @@ var Canvas = function (_React$Component2) {
       var currentPoint = this.getPoint.bind(this)(e);
 
       if (this.state.mousePos) {
-        var _ret2 = function () {
+        var _ret = function () {
           var lastPoint = { x: _this6.state.mousePos.x, y: _this6.state.mousePos.y };
           var pencil = _this6.props.assets[_this6.props.settings.pencilType];
           var pencilSize = PENCIL_SIZE[_this6.props.settings.pencilType];
-          var pencilBG = _this6.getPencilBG.bind(_this6)(_this6.props.settings.pencilColor);
 
           if (currentPoint.x === lastPoint.x && currentPoint.y === lastPoint.y) {
             return {
@@ -545,14 +535,32 @@ var Canvas = function (_React$Component2) {
           };
 
           var bottomLayerCommand = function bottomLayerCommand(ctx) {
-            return new Promise(function (resolve) {
-              ctx.globalCompositeOperation = 'source-over';
-              draw(ctx, pencil, lastPoint, currentPoint, pencilSize.bottom[0], pencilSize.bottom[1]);
+            return (0, _co2.default)(regeneratorRuntime.mark(function _callee3() {
+              return regeneratorRuntime.wrap(function _callee3$(_context3) {
+                while (1) {
+                  switch (_context3.prev = _context3.next) {
+                    case 0:
+                      ctx.globalCompositeOperation = 'source-over';
+                      draw(ctx, pencil, lastPoint, currentPoint, pencilSize.bottom[0], pencilSize.bottom[1]);
 
-              ctx.globalCompositeOperation = 'source-in';
-              ctx.drawImage(pencilBG, 0, 0);
-              resolve(ctx);
-            });
+                      if (this.props.settings.lightMode) {
+                        _context3.next = 5;
+                        break;
+                      }
+
+                      _context3.next = 5;
+                      return this.drawGradientEffect.bind(this)(ctx);
+
+                    case 5:
+                      return _context3.abrupt('return', ctx);
+
+                    case 6:
+                    case 'end':
+                      return _context3.stop();
+                  }
+                }
+              }, _callee3, this);
+            }).bind(_this6));
           };
 
           var eraserCommand = function eraserCommand(ctx) {
@@ -565,22 +573,50 @@ var Canvas = function (_React$Component2) {
 
           _this6.setState({
             topLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topLayerCommand,
-            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.lightMode ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
+            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
             bottomLayerCommand: !_this6.props.settings.enableBottomLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : bottomLayerCommand,
             mousePos: currentPoint
           });
         }();
 
-        if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
       }
     }
   }, {
     key: '_onCanvasMouseUp',
     value: function _onCanvasMouseUp(e) {
+      var _this7 = this;
+
+      var bottomLayerCommand = function bottomLayerCommand(ctx) {
+        return (0, _co2.default)(regeneratorRuntime.mark(function _callee4() {
+          return regeneratorRuntime.wrap(function _callee4$(_context4) {
+            while (1) {
+              switch (_context4.prev = _context4.next) {
+                case 0:
+                  if (!this.props.settings.lightMode) {
+                    _context4.next = 3;
+                    break;
+                  }
+
+                  _context4.next = 3;
+                  return this.drawGradientEffect.bind(this)(ctx);
+
+                case 3:
+                  return _context4.abrupt('return', ctx);
+
+                case 4:
+                case 'end':
+                  return _context4.stop();
+              }
+            }
+          }, _callee4, this);
+        }).bind(_this7));
+      };
+
       this.setState({
         mousePos: null,
         topLayerCommand: null,
-        bottomLayerCommand: null
+        bottomLayerCommand: bottomLayerCommand
       });
     }
   }, {
@@ -623,12 +659,12 @@ var Sidebar = function (_React$Component3) {
   function Sidebar(props) {
     _classCallCheck(this, Sidebar);
 
-    var _this7 = _possibleConstructorReturn(this, Object.getPrototypeOf(Sidebar).call(this, props));
+    var _this8 = _possibleConstructorReturn(this, Object.getPrototypeOf(Sidebar).call(this, props));
 
-    _this7.state = {
+    _this8.state = {
       hidden: true
     };
-    return _this7;
+    return _this8;
   }
 
   _createClass(Sidebar, [{
@@ -979,10 +1015,10 @@ var Sidebar = function (_React$Component3) {
   }, {
     key: '_onSettingsChangeClick',
     value: function _onSettingsChangeClick(changes) {
-      var _this8 = this;
+      var _this9 = this;
 
       return function () {
-        return _this8.props.onSettingsChange(changes);
+        return _this9.props.onSettingsChange(changes);
       };
     }
   }]);
@@ -1035,9 +1071,9 @@ var App = function (_React$Component5) {
   function App(props) {
     _classCallCheck(this, App);
 
-    var _this10 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
+    var _this11 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
 
-    _this10.state = {
+    _this11.state = {
       settings: {
         drawMode: 'pencil',
         pencilType: 'PENCIL_1',
@@ -1054,18 +1090,18 @@ var App = function (_React$Component5) {
       fullscreen: false,
       modal: null
     };
-    return _this10;
+    return _this11;
   }
 
   _createClass(App, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var _this11 = this;
+      var _this12 = this;
 
       var appDOM = _reactDom2.default.findDOMNode(this.refs.app);
       var fullscreenChangeEvent = function (e) {
-        _this11.setState({
-          fullscreen: !_this11.state.fullscreen
+        _this12.setState({
+          fullscreen: !_this12.state.fullscreen
         });
       }.bind(this);
 
@@ -1075,7 +1111,7 @@ var App = function (_React$Component5) {
       appDOM.addEventListener('MSFullscreenChange', fullscreenChangeEvent);
 
       window.addEventListener('resize', function (e) {
-        _this11.setState({
+        _this12.setState({
           windowWidth: window.innerWidth,
           windowHeight: window.innerHeight
         });
@@ -1089,7 +1125,7 @@ var App = function (_React$Component5) {
   }, {
     key: 'render',
     value: function render() {
-      var _this12 = this;
+      var _this13 = this;
 
       return _react2.default.createElement(
         'div',
@@ -1113,7 +1149,7 @@ var App = function (_React$Component5) {
               'button',
               { className: 'app__pencil ' + (this.state.settings.drawMode === 'pencil' ? '' : 'disabled'),
                 onClick: function () {
-                  return _this12._onSettingsChange({ drawMode: 'pencil' });
+                  return _this13._onSettingsChange({ drawMode: 'pencil' });
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-pencil', 'aria-hidden': 'true' })
@@ -1122,7 +1158,7 @@ var App = function (_React$Component5) {
               'button',
               { className: 'app__eraser ' + (this.state.settings.drawMode === 'eraser' ? '' : 'disabled'),
                 onClick: function () {
-                  return _this12._onSettingsChange({ drawMode: 'eraser' });
+                  return _this13._onSettingsChange({ drawMode: 'eraser' });
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-eraser', 'aria-hidden': 'true' })
@@ -1190,31 +1226,31 @@ var App = function (_React$Component5) {
   }, {
     key: '_onGenerateButtonClick',
     value: function _onGenerateButtonClick() {
-      (0, _co2.default)(regeneratorRuntime.mark(function _callee3() {
+      (0, _co2.default)(regeneratorRuntime.mark(function _callee5() {
         var canvas, objectURL;
-        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+        return regeneratorRuntime.wrap(function _callee5$(_context5) {
           while (1) {
-            switch (_context3.prev = _context3.next) {
+            switch (_context5.prev = _context5.next) {
               case 0:
-                _context3.next = 2;
+                _context5.next = 2;
                 return this.refs.canvas.generate();
 
               case 2:
-                canvas = _context3.sent;
-                _context3.next = 5;
+                canvas = _context5.sent;
+                _context5.next = 5;
                 return canvasToObjectURL(canvas);
 
               case 5:
-                objectURL = _context3.sent;
+                objectURL = _context5.sent;
 
                 this.popupSaveModal.bind(this)(objectURL);
 
               case 7:
               case 'end':
-                return _context3.stop();
+                return _context5.stop();
             }
           }
-        }, _callee3, this);
+        }, _callee5, this);
       }).bind(this));
     }
   }, {
@@ -1269,78 +1305,60 @@ var App = function (_React$Component5) {
   return App;
 }(_react2.default.Component);
 
-(0, _co2.default)(regeneratorRuntime.mark(function _callee4() {
+(0, _co2.default)(regeneratorRuntime.mark(function _callee6() {
   var assets;
-  return regeneratorRuntime.wrap(function _callee4$(_context4) {
+  return regeneratorRuntime.wrap(function _callee6$(_context6) {
     while (1) {
-      switch (_context4.prev = _context4.next) {
+      switch (_context6.prev = _context6.next) {
         case 0:
-          _context4.next = 2;
+          _context6.next = 2;
           return fetchAsset(ASSETS.PENCIL_1);
 
         case 2:
-          _context4.t0 = _context4.sent;
-          _context4.next = 5;
+          _context6.t0 = _context6.sent;
+          _context6.next = 5;
           return fetchAsset(ASSETS.PENCIL_2);
 
         case 5:
-          _context4.t1 = _context4.sent;
-          _context4.next = 8;
+          _context6.t1 = _context6.sent;
+          _context6.next = 8;
           return fetchAsset(ASSETS.PENCIL_3);
 
         case 8:
-          _context4.t2 = _context4.sent;
-          _context4.next = 11;
-          return fetchAsset(ASSETS.CUTE_BG);
-
-        case 11:
-          _context4.t3 = _context4.sent;
-          _context4.next = 14;
-          return fetchAsset(ASSETS.PASSION_BG);
-
-        case 14:
-          _context4.t4 = _context4.sent;
-          _context4.next = 17;
-          return fetchAsset(ASSETS.COOL_BG);
-
-        case 17:
-          _context4.t5 = _context4.sent;
-          _context4.next = 20;
+          _context6.t2 = _context6.sent;
+          _context6.next = 11;
           return fetchAsset(ASSETS.BG);
 
-        case 20:
-          _context4.t6 = _context4.sent;
-          _context4.next = 23;
+        case 11:
+          _context6.t3 = _context6.sent;
+          _context6.next = 14;
           return fetchAsset(ASSETS.ORB);
 
-        case 23:
-          _context4.t7 = _context4.sent;
-          _context4.next = 26;
+        case 14:
+          _context6.t4 = _context6.sent;
+          _context6.next = 17;
           return fetchAsset(ASSETS.FLARE);
 
-        case 26:
-          _context4.t8 = _context4.sent;
+        case 17:
+          _context6.t5 = _context6.sent;
           assets = {
-            PENCIL_1: _context4.t0,
-            PENCIL_2: _context4.t1,
-            PENCIL_3: _context4.t2,
-            CUTE_BG: _context4.t3,
-            PASSION_BG: _context4.t4,
-            COOL_BG: _context4.t5,
-            BG: _context4.t6,
-            ORB: _context4.t7,
-            FLARE: _context4.t8
+            PENCIL_1: _context6.t0,
+            PENCIL_2: _context6.t1,
+            PENCIL_3: _context6.t2,
+            BG: _context6.t3,
+            ORB: _context6.t4,
+            FLARE: _context6.t5
           };
 
 
           _reactDom2.default.render(_react2.default.createElement(App, { assets: assets }), document.getElementById('renderpoint'));
 
-        case 29:
+        case 20:
         case 'end':
-          return _context4.stop();
+          return _context6.stop();
       }
     }
-  }, _callee4, this);
+  }, _callee6, this);
 }));
 
 },{"./../package.json":469,"babel-polyfill":2,"blueimp-canvas-to-blob":4,"co":5,"react":468,"react-dom":329,"react-social":330}],2:[function(require,module,exports){
