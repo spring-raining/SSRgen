@@ -467,6 +467,9 @@ ul.sidebar__choice {
 .sidebar__footnote {
   font-size: 11px;
   line-height: 20px; }
+  .sidebar__footnote ul {
+    margin: 0;
+    padding: 0 0 0 30px; }
 
 .sidebar__share {
   display: flex; }
