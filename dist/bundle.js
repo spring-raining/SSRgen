@@ -114,7 +114,9 @@ var Layer = function (_React$Component) {
     _this.state = {
       ctx: null,
       commandQueue: [],
-      runningCommand: null
+      runningCommand: null,
+      undoBuffer: null,
+      swapBuffer: null
     };
     return _this;
   }
@@ -139,8 +141,8 @@ var Layer = function (_React$Component) {
       }
     }
   }, {
-    key: 'componentWillUpdate',
-    value: function componentWillUpdate(nextProps, nextState) {
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps) {
       if (nextProps.command && nextProps.command !== this.props.command) {
         this.setState({
           commandQueue: this.state.commandQueue.concat([nextProps.command])
@@ -195,6 +197,76 @@ var Layer = function (_React$Component) {
     key: 'getCanvas',
     value: function getCanvas() {
       return _reactDom2.default.findDOMNode(this.refs.canvas);
+    }
+  }, {
+    key: 'saveUndoBuffer',
+    value: function saveUndoBuffer() {
+      var undoBuffer = void 0;
+      if (!this.state.undoBuffer) {
+        undoBuffer = document.createElement('canvas');
+        undoBuffer.width = 1280;
+        undoBuffer.height = 720;
+        this.setState({
+          undoBuffer: undoBuffer
+        });
+      } else {
+        undoBuffer = this.state.undoBuffer;
+      }
+      var undoCtx = undoBuffer.getContext('2d');
+      undoCtx.globalCompositeOperation = "source-over";
+      undoCtx.shadowBlur = 0;
+      undoCtx.clearRect(0, 0, 1280, 720);
+      undoCtx.drawImage(this.getCanvas(), 0, 0);
+    }
+  }, {
+    key: 'retrieveUndoBuffer',
+    value: function retrieveUndoBuffer() {
+      this.state.ctx.globalCompositeOperation = "source-over";
+      this.state.ctx.shadowBlur = 0;
+      this.state.ctx.clearRect(0, 0, 1280, 720);
+      if (this.state.undoBuffer) {
+        this.state.ctx.drawImage(this.state.undoBuffer, 0, 0);
+      }
+    }
+  }, {
+    key: 'swapUndoBuffer',
+    value: function swapUndoBuffer() {
+      var undoBuffer = void 0;
+      if (!this.state.undoBuffer) {
+        undoBuffer = document.createElement('canvas');
+        undoBuffer.width = 1280;
+        undoBuffer.height = 720;
+        this.setState({
+          undoBuffer: undoBuffer
+        });
+      } else {
+        undoBuffer = this.state.undoBuffer;
+      }
+      var swapBuffer = void 0;
+      if (!this.state.swapBuffer) {
+        swapBuffer = document.createElement('canvas');
+        swapBuffer.width = 1280;
+        swapBuffer.height = 720;
+        this.setState({
+          swapBuffer: swapBuffer
+        });
+      } else {
+        swapBuffer = this.state.swapBuffer;
+      }
+      var undoCtx = undoBuffer.getContext('2d');
+      var swapCtx = swapBuffer.getContext('2d');
+      swapCtx.globalCompositeOperation = "source-over";
+      swapCtx.shadowBlur = 0;
+      swapCtx.clearRect(0, 0, 1280, 720);
+      swapCtx.drawImage(this.getCanvas(), 0, 0);
+      this.state.ctx.globalCompositeOperation = "source-over";
+      this.state.ctx.shadowBlur = 0;
+      this.state.ctx.clearRect(0, 0, 1280, 720);
+      this.state.ctx.drawImage(undoBuffer, 0, 0);
+      undoCtx.globalCompositeOperation = "source-over";
+      undoCtx.shadowBlur = 0;
+      undoCtx.clearRect(0, 0, 1280, 720);
+      undoCtx.drawImage(swapBuffer, 0, 0);
     }
   }]);
 
@@ -379,8 +451,50 @@ var Canvas = function (_React$Component2) {
       });
     }
   }, {
+    key: 'saveUndoBuffer',
+    value: function saveUndoBuffer() {
+      this.refs.top.saveUndoBuffer();
+      this.refs.topShadow.saveUndoBuffer();
+      this.refs.bottom.saveUndoBuffer();
+    }
+  }, {
+    key: 'retrieveUndoBuffer',
+    value: function retrieveUndoBuffer() {
+      this.refs.top.retrieveUndoBuffer();
+      this.refs.topShadow.retrieveUndoBuffer();
+      this.refs.bottom.retrieveUndoBuffer();
+      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
+      this.setState({
+        bottomLayerCommand: function bottomLayerCommand(ctx) {
+          return new Promise(function (resolve) {
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.drawImage(pencilBG, 0, 0);
+            resolve(ctx);
+          });
+        }
+      });
+    }
+  }, {
+    key: 'swapUndoBuffer',
+    value: function swapUndoBuffer() {
+      this.refs.top.swapUndoBuffer();
+      this.refs.topShadow.swapUndoBuffer();
+      this.refs.bottom.swapUndoBuffer();
+      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
+      this.setState({
+        bottomLayerCommand: function bottomLayerCommand(ctx) {
+          return new Promise(function (resolve) {
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.drawImage(pencilBG, 0, 0);
+            resolve(ctx);
+          });
+        }
+      });
+    }
+  }, {
     key: '_onCanvasMouseDown',
     value: function _onCanvasMouseDown(e) {
+      this.saveUndoBuffer();
       this.setState({
         mousePos: this.getPoint.bind(this)(e)
       });
@@ -539,6 +653,15 @@ var Sidebar = function (_React$Component3) {
               'button',
               { onClick: this.props.onFullscreenButtonClick },
               this.props.fullscreen ? '全画面を中止' : '全画面で編集'
+            )
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: 'sidebar__section' },
+            _react2.default.createElement(
+              'button',
+              { onClick: this.props.onUndoButtonClick },
+              '元に戻す/やり直し'
             )
           ),
           _react2.default.createElement(
@@ -988,7 +1111,8 @@ var App = function (_React$Component5) {
           fullscreen: this.state.fullscreen,
           onSettingsChange: this._onSettingsChange.bind(this),
           onGenerateButtonClick: this._onGenerateButtonClick.bind(this),
-          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this)
+          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this),
+          onUndoButtonClick: this._onUndoButtonClick.bind(this)
         }),
         this.state.modal
       );
@@ -1091,6 +1215,11 @@ var App = function (_React$Component5) {
           document.msExitFullScreen();
         }
       }
+    }
+  }, {
+    key: '_onUndoButtonClick',
+    value: function _onUndoButtonClick() {
+      this.refs.canvas.swapUndoBuffer();
     }
   }, {
     key: '_onCloseButtonClick',
