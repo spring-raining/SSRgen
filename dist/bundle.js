@@ -114,14 +114,17 @@ var Layer = function (_React$Component) {
     _this.state = {
       ctx: null,
       commandQueue: [],
-      runningCommand: null
+      runningCommand: null,
+      undoBuffer: null,
+      swapBuffer: null
     };
-    _this.undoBuffer = document.createElement('canvas');
-    _this.undoBuffer.width = 1280;
-    _this.undoBuffer.height = 720;
-    _this.swapBuffer = document.createElement('canvas');
-    _this.swapBuffer.width = 1280;
-    _this.swapBuffer.height = 720;
+    // this.undoBuffer = document.createElement('canvas');
+    // this.undoBuffer.width = 1280;
+    // this.undoBuffer.height = 720;
+    // this.swapBuffer = document.createElement('canvas');
+    // this.swapBuffer.width = 1280;
+    // this.swapBuffer.height = 720;
+    // this.undoBuffer = null;
     return _this;
   }
 
@@ -205,24 +208,82 @@ var Layer = function (_React$Component) {
   }, {
     key: 'saveUndoBuffer',
     value: function saveUndoBuffer() {
-      var ctx = this.undoBuffer.getContext('2d');
-      ctx.globalCompositeOperation = "source-over";
-      ctx.clearRect(0, 0, 1280, 720);
-      ctx.drawImage(this.getCanvas(), 0, 0);
+      // const ctx = this.undoBuffer.getContext('2d');
+      // ctx.globalCompositeOperation = "source-over";
+      // ctx.clearRect(0, 0, 1280, 720);
+      // ctx.drawImage(this.getCanvas(), 0, 0);
+      // this.undoBuffer = this.state.ctx.getImageData(0, 0, 1280, 720);
+      if (!undoBuffer) {
+        var _undoBuffer = document.createElement('canvas');
+        _undoBuffer.width = 1280;
+        _undoBuffer.height = 720;
+        this.setState({
+          undoBuffer: _undoBuffer
+        });
+      }
+      var undoCtx = this.state.undoBuffer.getContext('2d');
+      undoCtx.globalCompositeOperation = "source-over";
+      undoCtx.shadowBlur = 0;
+      undoCtx.clearRect(0, 0, 1280, 720);
+      undoCtx.drawImage(this.getCanvas(), 0, 0);
     }
   }, {
     key: 'retrieveUndoBuffer',
     value: function retrieveUndoBuffer() {
+      // this.state.ctx.globalCompositeOperation = "source-over";
+      // this.state.ctx.shadowBlur = 0;
+      // this.state.ctx.clearRect(0, 0, 1280, 720);
+      // this.state.ctx.drawImage(this.undoBuffer, 0, 0);
+      // this.state.ctx.globalCompositeOperation = "source-over";
+      // this.state.ctx.shadowBlur = 0;
+      // this.state.ctx.putImageData(this.undoBuffer, 0, 0);
       this.state.ctx.globalCompositeOperation = "source-over";
       this.state.ctx.shadowBlur = 0;
       this.state.ctx.clearRect(0, 0, 1280, 720);
-      this.state.ctx.drawImage(this.undoBuffer, 0, 0);
+      if (undoBuffer) {
+        this.state.ctx.drawImage(this.state.undoBuffer, 0, 0);
+      }
     }
   }, {
     key: 'swapUndoBuffer',
     value: function swapUndoBuffer() {
-      var undoCtx = this.undoBuffer.getContext('2d');
-      var swapCtx = this.swapBuffer.getContext('2d');
+      // const undoCtx = this.undoBuffer.getContext('2d');
+      // const swapCtx = this.swapBuffer.getContext('2d');
+      // swapCtx.globalCompositeOperation = "source-over";
+      // swapCtx.shadowBlur = 0;
+      // swapCtx.clearRect(0, 0, 1280, 720);
+      // swapCtx.drawImage(this.getCanvas(), 0, 0);
+      // this.state.ctx.globalCompositeOperation = "source-over";
+      // this.state.ctx.shadowBlur = 0;
+      // this.state.ctx.clearRect(0, 0, 1280, 720);
+      // this.state.ctx.drawImage(this.undoBuffer, 0, 0);
+      // undoCtx.globalCompositeOperation = "source-over";
+      // undoCtx.shadowBlur = 0;
+      // undoCtx.clearRect(0, 0, 1280, 720);
+      // undoCtx.drawImage(this.swapBuffer, 0, 0);
+      // const temp = this.state.ctx.getImageData(0, 0, 1280, 720);
+      // this.state.ctx.globalCompositeOperation = "source-over";
+      // this.state.ctx.shadowBlur = 0;
+      // this.state.ctx.putImageData(this.undoBuffer, 0, 0);
+      // this.undoBuffer = temp;
+      if (!undoBuffer) {
+        var _undoBuffer2 = document.createElement('canvas');
+        _undoBuffer2.width = 1280;
+        _undoBuffer2.height = 720;
+        this.setState({
+          undoBuffer: _undoBuffer2
+        });
+      }
+      if (!swapBuffer) {
+        var _swapBuffer = document.createElement('canvas');
+        _swapBuffer.width = 1280;
+        _swapBuffer.height = 720;
+        this.setState({
+          swapBuffer: _swapBuffer
+        });
+      }
+      var undoCtx = this.state.undoBuffer.getContext('2d');
+      var swapCtx = this.state.swapBuffer.getContext('2d');
       swapCtx.globalCompositeOperation = "source-over";
       swapCtx.shadowBlur = 0;
       swapCtx.clearRect(0, 0, 1280, 720);
@@ -230,11 +291,11 @@ var Layer = function (_React$Component) {
       this.state.ctx.globalCompositeOperation = "source-over";
       this.state.ctx.shadowBlur = 0;
       this.state.ctx.clearRect(0, 0, 1280, 720);
-      this.state.ctx.drawImage(this.undoBuffer, 0, 0);
+      this.state.ctx.drawImage(this.state.undoBuffer, 0, 0);
       undoCtx.globalCompositeOperation = "source-over";
       undoCtx.shadowBlur = 0;
       undoCtx.clearRect(0, 0, 1280, 720);
-      undoCtx.drawImage(this.swapBuffer, 0, 0);
+      undoCtx.drawImage(this.state.swapBuffer, 0, 0);
     }
   }]);
 
