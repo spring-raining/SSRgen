@@ -363,6 +363,22 @@ var Canvas = function (_React$Component2) {
       }).bind(this));
     }
   }, {
+    key: 'trash',
+    value: function trash() {
+      var trashCommand = function trashCommand(ctx) {
+        return new Promise(function (resolve) {
+          ctx.clearRect(0, 0, 1280, 720);
+          resolve(ctx);
+        });
+      };
+
+      this.setState({
+        topLayerCommand: trashCommand,
+        topShadowLayerCommand: trashCommand,
+        bottomLayerCommand: trashCommand
+      });
+    }
+  }, {
     key: '_onCanvasMouseDown',
     value: function _onCanvasMouseDown(e) {
       this.setState({
@@ -940,7 +956,7 @@ var App = function (_React$Component5) {
           }),
           _react2.default.createElement(
             'div',
-            { style: { position: 'absolute', bottom: '12px', right: '12px' } },
+            { className: 'app__accessory' },
             _react2.default.createElement(
               'button',
               { className: 'app__pencil ' + (this.state.settings.drawMode === 'pencil' ? '' : 'disabled'),
@@ -958,6 +974,13 @@ var App = function (_React$Component5) {
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-eraser', 'aria-hidden': 'true' })
+            ),
+            _react2.default.createElement(
+              'button',
+              { className: 'app__trash',
+                onClick: this._onTrashButtonClick.bind(this)
+              },
+              _react2.default.createElement('i', { className: 'fa fa-trash', 'aria-hidden': 'true' })
             )
           )
         ),
@@ -1075,6 +1098,13 @@ var App = function (_React$Component5) {
       this.setState({
         modal: null
       });
+    }
+  }, {
+    key: '_onTrashButtonClick',
+    value: function _onTrashButtonClick() {
+      if (window.confirm('キャンバスを全て消去しますか？')) {
+        this.refs.canvas.trash();
+      }
     }
   }]);
 
@@ -9829,17 +9859,31 @@ module.exports = require('react/lib/ReactDOM');
     }
   });
 
+  exports.TwitterCount = React.createClass({
+    displayName: "TwitterCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=all";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.twitter || 0;
+    }
+  });
+
   exports.GooglePlusCount = React.createClass({
     displayName: "GooglePlusCount"
 
     , mixins: [Count]
 
     , constructUrl: function () {
-      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url);
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=google";
     }
 
     , extractCount: function (data) {
-      return data.shares.google;
+      return data.shares.google || 0;
     }
   });
 
@@ -9919,6 +9963,20 @@ module.exports = require('react/lib/ReactDOM');
 
     , extractCount: function (data) {
       return data.response.note_count || 0;
+    }
+  });
+
+  exports.PocketCount = React.createClass({
+    displayName: "PocketCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=pocket";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.pocket || 0;
     }
   });
 
@@ -10045,6 +10103,16 @@ module.exports = require('react/lib/ReactDOM');
 
     , constructUrl: function () {
       return "https://www.tumblr.com/widgets/share/tool?posttype=link&title=" + encodeURIComponent(this.props.message) + "&content=" + encodeURIComponent(this.props.url) + "&canonicalUrl=" + encodeURIComponent(this.props.url) + "&shareSource=tumblr_share_button";
+    }
+  });
+
+  exports.PocketButton = React.createClass({
+    displayName: "PocketButton"
+
+    , mixins: [Button, DefaultBlankTarget]
+
+    , constructUrl: function () {
+      return "https://getpocket.com/save?url=" + encodeURIComponent(this.props.url) + "&title=" + encodeURIComponent(this.props.message);
     }
   });
 
@@ -28306,7 +28374,7 @@ module.exports = require('./lib/React');
 },{"./lib/React":355}],468:[function(require,module,exports){
 module.exports={
   "name": "ssrgen",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/index.js",
