@@ -1637,59 +1637,82 @@ var CharacterNameFrame = function (_React$Component7) {
 }(_react2.default.Component);
 
 (0, _co2.default)(regeneratorRuntime.mark(function _callee7() {
-  var assets;
+  var assets, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, key;
+
   return regeneratorRuntime.wrap(function _callee7$(_context7) {
     while (1) {
       switch (_context7.prev = _context7.next) {
         case 0:
-          _context7.next = 2;
-          return fetchAsset(ASSETS.PENCIL_1);
+          assets = {};
+          _iteratorNormalCompletion2 = true;
+          _didIteratorError2 = false;
+          _iteratorError2 = undefined;
+          _context7.prev = 4;
+          _iterator2 = Object.keys(ASSETS)[Symbol.iterator]();
 
-        case 2:
-          _context7.t0 = _context7.sent;
-          _context7.next = 5;
-          return fetchAsset(ASSETS.PENCIL_2);
+        case 6:
+          if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
+            _context7.next = 14;
+            break;
+          }
 
-        case 5:
-          _context7.t1 = _context7.sent;
-          _context7.next = 8;
-          return fetchAsset(ASSETS.PENCIL_3);
+          key = _step2.value;
+          _context7.next = 10;
+          return fetchAsset(ASSETS[key]);
 
-        case 8:
-          _context7.t2 = _context7.sent;
-          _context7.next = 11;
-          return fetchAsset(ASSETS.BG);
+        case 10:
+          assets[key] = _context7.sent;
 
         case 11:
-          _context7.t3 = _context7.sent;
-          _context7.next = 14;
-          return fetchAsset(ASSETS.ORB);
+          _iteratorNormalCompletion2 = true;
+          _context7.next = 6;
+          break;
 
         case 14:
-          _context7.t4 = _context7.sent;
-          _context7.next = 17;
-          return fetchAsset(ASSETS.FLARE);
+          _context7.next = 20;
+          break;
 
-        case 17:
-          _context7.t5 = _context7.sent;
-          assets = {
-            PENCIL_1: _context7.t0,
-            PENCIL_2: _context7.t1,
-            PENCIL_3: _context7.t2,
-            BG: _context7.t3,
-            ORB: _context7.t4,
-            FLARE: _context7.t5
-          };
+        case 16:
+          _context7.prev = 16;
+          _context7.t0 = _context7['catch'](4);
+          _didIteratorError2 = true;
+          _iteratorError2 = _context7.t0;
 
+        case 20:
+          _context7.prev = 20;
+          _context7.prev = 21;
+
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+
+        case 23:
+          _context7.prev = 23;
+
+          if (!_didIteratorError2) {
+            _context7.next = 26;
+            break;
+          }
+
+          throw _iteratorError2;
+
+        case 26:
+          return _context7.finish(23);
+
+        case 27:
+          return _context7.finish(20);
+
+        case 28:
+          ;
 
           _reactDom2.default.render(_react2.default.createElement(App, { assets: assets }), document.getElementById('renderpoint'));
 
-        case 20:
+        case 30:
         case 'end':
           return _context7.stop();
       }
     }
-  }, _callee7, this);
+  }, _callee7, this, [[4, 16, 20, 28], [21,, 23, 27]]);
 }));
 
 },{"./../package.json":469,"babel-polyfill":2,"blueimp-canvas-to-blob":4,"co":5,"react":468,"react-dom":329,"react-social":330}],2:[function(require,module,exports){
