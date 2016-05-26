@@ -399,12 +399,20 @@ button {
 .app {
   position: relative; }
 
-.app__pencil,
-.app__eraser {
-  margin: 10px;
-  width: 48px;
-  height: 48px;
-  border-radius: 48px; }
+.app__accessory {
+  position: absolute;
+  bottom: 12px;
+  right: 12px; }
+  .app__accessory > button {
+    margin: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 48px; }
+
+.app__trash {
+  background: #da1d1d; }
+  .app__trash:hover {
+    background: #e75451; }
 
 .canvas__wrapper {
   position: absolute;

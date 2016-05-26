@@ -50,12 +50,25 @@ button {
   position: relative;
 }
 
-.app__pencil,
-.app__eraser {
-  margin: 10px;
-  width: 48px;
-  height: 48px;
-  border-radius: 48px;
+.app__accessory {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+
+  & > button {
+    margin: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 48px;
+  }
+}
+
+.app__trash {
+  background: #da1d1d;
+
+  &:hover {
+    background: #e75451;
+  }
 }
 
 .canvas__wrapper {
