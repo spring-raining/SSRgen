@@ -1445,7 +1445,7 @@ var MoviePlayer = function (_React$Component6) {
       this.ctx.clearRect(0, 0, width, height);
       this.ctx.globalCompositeOperation = 'lighter';
       // main sign, displayed largely on center
-      this.drawSign(0, 0, this.easeAlpha(time, 4.5, 7, 0.7));
+      this.drawSign(0, 0, this.easeAlpha(time, 4.5, 7.1, 0.7));
       // pasted character image
       this.drawCharacter(time);
       // main video
@@ -1453,7 +1453,7 @@ var MoviePlayer = function (_React$Component6) {
       // small sign, displayed with the character
       this.drawSign(0, 200, this.easeAlpha(time, 10, 20, 1), 0.5, 'source-over');
       // black sign, displayed for a moment on the whiteout screen
-      this.drawSign(0, 0, this.easeAlpha(time, 6.5, 7.5, 0.5), 1, 'difference');
+      this.drawSign(0, 0, this.easeAlpha(time, 6.5, 7, 0.5), 1, 'difference');
       var nameStandBy = time < 10;
       if (this.state.nameStandBy != nameStandBy) this.setState({ nameStandBy: nameStandBy });
     }
