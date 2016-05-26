@@ -114,7 +114,9 @@ var Layer = function (_React$Component) {
     _this.state = {
       ctx: null,
       commandQueue: [],
-      runningCommand: null
+      runningCommand: null,
+      undoBuffer: null,
+      swapBuffer: null
     };
     return _this;
   }
@@ -139,8 +141,8 @@ var Layer = function (_React$Component) {
       }
     }
   }, {
-    key: 'componentWillUpdate',
-    value: function componentWillUpdate(nextProps, nextState) {
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps) {
       if (nextProps.command && nextProps.command !== this.props.command) {
         this.setState({
           commandQueue: this.state.commandQueue.concat([nextProps.command])
@@ -195,6 +197,76 @@ var Layer = function (_React$Component) {
     key: 'getCanvas',
     value: function getCanvas() {
       return _reactDom2.default.findDOMNode(this.refs.canvas);
+    }
+  }, {
+    key: 'saveUndoBuffer',
+    value: function saveUndoBuffer() {
+      var undoBuffer = void 0;
+      if (!this.state.undoBuffer) {
+        undoBuffer = document.createElement('canvas');
+        undoBuffer.width = 1280;
+        undoBuffer.height = 720;
+        this.setState({
+          undoBuffer: undoBuffer
+        });
+      } else {
+        undoBuffer = this.state.undoBuffer;
+      }
+      var undoCtx = undoBuffer.getContext('2d');
+      undoCtx.globalCompositeOperation = "source-over";
+      undoCtx.shadowBlur = 0;
+      undoCtx.clearRect(0, 0, 1280, 720);
+      undoCtx.drawImage(this.getCanvas(), 0, 0);
+    }
+  }, {
+    key: 'retrieveUndoBuffer',
+    value: function retrieveUndoBuffer() {
+      this.state.ctx.globalCompositeOperation = "source-over";
+      this.state.ctx.shadowBlur = 0;
+      this.state.ctx.clearRect(0, 0, 1280, 720);
+      if (this.state.undoBuffer) {
+        this.state.ctx.drawImage(this.state.undoBuffer, 0, 0);
+      }
+    }
+  }, {
+    key: 'swapUndoBuffer',
+    value: function swapUndoBuffer() {
+      var undoBuffer = void 0;
+      if (!this.state.undoBuffer) {
+        undoBuffer = document.createElement('canvas');
+        undoBuffer.width = 1280;
+        undoBuffer.height = 720;
+        this.setState({
+          undoBuffer: undoBuffer
+        });
+      } else {
+        undoBuffer = this.state.undoBuffer;
+      }
+      var swapBuffer = void 0;
+      if (!this.state.swapBuffer) {
+        swapBuffer = document.createElement('canvas');
+        swapBuffer.width = 1280;
+        swapBuffer.height = 720;
+        this.setState({
+          swapBuffer: swapBuffer
+        });
+      } else {
+        swapBuffer = this.state.swapBuffer;
+      }
+      var undoCtx = undoBuffer.getContext('2d');
+      var swapCtx = swapBuffer.getContext('2d');
+      swapCtx.globalCompositeOperation = "source-over";
+      swapCtx.shadowBlur = 0;
+      swapCtx.clearRect(0, 0, 1280, 720);
+      swapCtx.drawImage(this.getCanvas(), 0, 0);
+      this.state.ctx.globalCompositeOperation = "source-over";
+      this.state.ctx.shadowBlur = 0;
+      this.state.ctx.clearRect(0, 0, 1280, 720);
+      this.state.ctx.drawImage(undoBuffer, 0, 0);
+      undoCtx.globalCompositeOperation = "source-over";
+      undoCtx.shadowBlur = 0;
+      undoCtx.clearRect(0, 0, 1280, 720);
+      undoCtx.drawImage(swapBuffer, 0, 0);
     }
   }]);
 
@@ -363,8 +435,66 @@ var Canvas = function (_React$Component2) {
       }).bind(this));
     }
   }, {
+    key: 'trash',
+    value: function trash() {
+      var trashCommand = function trashCommand(ctx) {
+        return new Promise(function (resolve) {
+          ctx.clearRect(0, 0, 1280, 720);
+          resolve(ctx);
+        });
+      };
+
+      this.setState({
+        topLayerCommand: trashCommand,
+        topShadowLayerCommand: trashCommand,
+        bottomLayerCommand: trashCommand
+      });
+    }
+  }, {
+    key: 'saveUndoBuffer',
+    value: function saveUndoBuffer() {
+      this.refs.top.saveUndoBuffer();
+      this.refs.topShadow.saveUndoBuffer();
+      this.refs.bottom.saveUndoBuffer();
+    }
+  }, {
+    key: 'retrieveUndoBuffer',
+    value: function retrieveUndoBuffer() {
+      this.refs.top.retrieveUndoBuffer();
+      this.refs.topShadow.retrieveUndoBuffer();
+      this.refs.bottom.retrieveUndoBuffer();
+      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
+      this.setState({
+        bottomLayerCommand: function bottomLayerCommand(ctx) {
+          return new Promise(function (resolve) {
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.drawImage(pencilBG, 0, 0);
+            resolve(ctx);
+          });
+        }
+      });
+    }
+  }, {
+    key: 'swapUndoBuffer',
+    value: function swapUndoBuffer() {
+      this.refs.top.swapUndoBuffer();
+      this.refs.topShadow.swapUndoBuffer();
+      this.refs.bottom.swapUndoBuffer();
+      var pencilBG = this.getPencilBG(this.props.settings.pencilColor);
+      this.setState({
+        bottomLayerCommand: function bottomLayerCommand(ctx) {
+          return new Promise(function (resolve) {
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.drawImage(pencilBG, 0, 0);
+            resolve(ctx);
+          });
+        }
+      });
+    }
+  }, {
     key: '_onCanvasMouseDown',
     value: function _onCanvasMouseDown(e) {
+      this.saveUndoBuffer();
       this.setState({
         mousePos: this.getPoint.bind(this)(e)
       });
@@ -523,6 +653,15 @@ var Sidebar = function (_React$Component3) {
               'button',
               { onClick: this.props.onFullscreenButtonClick },
               this.props.fullscreen ? '全画面を中止' : '全画面で編集'
+            )
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: 'sidebar__section' },
+            _react2.default.createElement(
+              'button',
+              { onClick: this.props.onUndoButtonClick },
+              '元に戻す/やり直し'
             )
           ),
           _react2.default.createElement(
@@ -796,6 +935,26 @@ var Sidebar = function (_React$Component3) {
                 { href: 'http://harusamex.com' },
                 'harusamex.com'
               )
+            ),
+            _react2.default.createElement(
+              'div',
+              null,
+              'contributors'
+            ),
+            _react2.default.createElement(
+              'ul',
+              null,
+              _package2.default.contributors.map(function (e) {
+                return _react2.default.createElement(
+                  'li',
+                  { key: e.name },
+                  _react2.default.createElement(
+                    'a',
+                    { href: e.url },
+                    e.name
+                  )
+                );
+              })
             )
           )
         )
@@ -940,7 +1099,7 @@ var App = function (_React$Component5) {
           }),
           _react2.default.createElement(
             'div',
-            { style: { position: 'absolute', bottom: '12px', right: '12px' } },
+            { className: 'app__accessory' },
             _react2.default.createElement(
               'button',
               { className: 'app__pencil ' + (this.state.settings.drawMode === 'pencil' ? '' : 'disabled'),
@@ -958,6 +1117,13 @@ var App = function (_React$Component5) {
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-eraser', 'aria-hidden': 'true' })
+            ),
+            _react2.default.createElement(
+              'button',
+              { className: 'app__trash',
+                onClick: this._onTrashButtonClick.bind(this)
+              },
+              _react2.default.createElement('i', { className: 'fa fa-trash', 'aria-hidden': 'true' })
             )
           )
         ),
@@ -965,7 +1131,8 @@ var App = function (_React$Component5) {
           fullscreen: this.state.fullscreen,
           onSettingsChange: this._onSettingsChange.bind(this),
           onGenerateButtonClick: this._onGenerateButtonClick.bind(this),
-          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this)
+          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this),
+          onUndoButtonClick: this._onUndoButtonClick.bind(this)
         }),
         this.state.modal
       );
@@ -1070,11 +1237,23 @@ var App = function (_React$Component5) {
       }
     }
   }, {
+    key: '_onUndoButtonClick',
+    value: function _onUndoButtonClick() {
+      this.refs.canvas.swapUndoBuffer();
+    }
+  }, {
     key: '_onCloseButtonClick',
     value: function _onCloseButtonClick() {
       this.setState({
         modal: null
       });
+    }
+  }, {
+    key: '_onTrashButtonClick',
+    value: function _onTrashButtonClick() {
+      if (window.confirm('キャンバスを全て消去しますか？')) {
+        this.refs.canvas.trash();
+      }
     }
   }]);
 
@@ -9829,17 +10008,31 @@ module.exports = require('react/lib/ReactDOM');
     }
   });
 
+  exports.TwitterCount = React.createClass({
+    displayName: "TwitterCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=all";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.twitter || 0;
+    }
+  });
+
   exports.GooglePlusCount = React.createClass({
     displayName: "GooglePlusCount"
 
     , mixins: [Count]
 
     , constructUrl: function () {
-      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url);
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=google";
     }
 
     , extractCount: function (data) {
-      return data.shares.google;
+      return data.shares.google || 0;
     }
   });
 
@@ -9919,6 +10112,20 @@ module.exports = require('react/lib/ReactDOM');
 
     , extractCount: function (data) {
       return data.response.note_count || 0;
+    }
+  });
+
+  exports.PocketCount = React.createClass({
+    displayName: "PocketCount"
+
+    , mixins: [Count]
+
+    , constructUrl: function () {
+      return "https://count.donreach.com/?callback=@&url=" + encodeURIComponent(this.props.url) + "&providers=pocket";
+    }
+
+    , extractCount: function (data) {
+      return data.shares.pocket || 0;
     }
   });
 
@@ -10045,6 +10252,16 @@ module.exports = require('react/lib/ReactDOM');
 
     , constructUrl: function () {
       return "https://www.tumblr.com/widgets/share/tool?posttype=link&title=" + encodeURIComponent(this.props.message) + "&content=" + encodeURIComponent(this.props.url) + "&canonicalUrl=" + encodeURIComponent(this.props.url) + "&shareSource=tumblr_share_button";
+    }
+  });
+
+  exports.PocketButton = React.createClass({
+    displayName: "PocketButton"
+
+    , mixins: [Button, DefaultBlankTarget]
+
+    , constructUrl: function () {
+      return "https://getpocket.com/save?url=" + encodeURIComponent(this.props.url) + "&title=" + encodeURIComponent(this.props.message);
     }
   });
 
@@ -28306,7 +28523,7 @@ module.exports = require('./lib/React');
 },{"./lib/React":355}],468:[function(require,module,exports){
 module.exports={
   "name": "ssrgen",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/index.js",
@@ -28316,6 +28533,13 @@ module.exports={
     "build-css": "node-sass -r style -o dist"
   },
   "author": "spring-raining",
+  "contributors": [
+    {
+      "name": "susisu",
+      "email": "susisu2413@yahoo.co.jp",
+      "url": "https://susisu.github.io/"
+    }
+  ],
   "license": "MIT",
   "homepage": "http://ssrgen.harusamex.com",
   "repository": {

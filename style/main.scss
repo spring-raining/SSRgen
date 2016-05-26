@@ -50,12 +50,25 @@ button {
   position: relative;
 }
 
-.app__pencil,
-.app__eraser {
-  margin: 10px;
-  width: 48px;
-  height: 48px;
-  border-radius: 48px;
+.app__accessory {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+
+  & > button {
+    margin: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 48px;
+  }
+}
+
+.app__trash {
+  background: #da1d1d;
+
+  &:hover {
+    background: #e75451;
+  }
 }
 
 .canvas__wrapper {
@@ -122,6 +135,11 @@ ul.sidebar__choice {
 .sidebar__footnote {
   font-size: 11px;
   line-height: 20px;
+
+  ul {
+    margin: 0;
+    padding: 0 0 0 30px;
+  }
 }
 
 .sidebar__share {
@@ -166,10 +184,10 @@ ul.sidebar__choice {
 
 .modal {
   position: absolute;
-  top: 60px;
-  bottom: 60px;
-  left: 60px;
-  right: 60px;
+  top: 15px;
+  bottom: 15px;
+  left: 15px;
+  right: 15px;
   margin: auto;
   padding: 16px;
   max-width: 600px;
