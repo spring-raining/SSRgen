@@ -935,6 +935,26 @@ var Sidebar = function (_React$Component3) {
                 { href: 'http://harusamex.com' },
                 'harusamex.com'
               )
+            ),
+            _react2.default.createElement(
+              'div',
+              null,
+              'contributors'
+            ),
+            _react2.default.createElement(
+              'ul',
+              null,
+              _package2.default.contributors.map(function (e) {
+                return _react2.default.createElement(
+                  'li',
+                  { key: e.name },
+                  _react2.default.createElement(
+                    'a',
+                    { href: e.url },
+                    e.name
+                  )
+                );
+              })
             )
           )
         )
@@ -28513,6 +28533,13 @@ module.exports={
     "build-css": "node-sass -r style -o dist"
   },
   "author": "spring-raining",
+  "contributors": [
+    {
+      "name": "susisu",
+      "email": "susisu2413@yahoo.co.jp",
+      "url": "https://susisu.github.io/"
+    }
+  ],
   "license": "MIT",
   "homepage": "http://ssrgen.harusamex.com",
   "repository": {
