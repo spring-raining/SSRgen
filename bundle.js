@@ -573,7 +573,7 @@ var Canvas = function (_React$Component2) {
 
           _this6.setState({
             topLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topLayerCommand,
-            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
+            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.lightMode ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
             bottomLayerCommand: !_this6.props.settings.enableBottomLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : bottomLayerCommand,
             mousePos: currentPoint
           });
