@@ -726,15 +726,6 @@ var Sidebar = function (_React$Component3) {
           _react2.default.createElement(
             'div',
             { className: 'sidebar__section' },
-            _react2.default.createElement(
-              'button',
-              { onClick: this.props.onUndoButtonClick },
-              '元に戻す/やり直し'
-            )
-          ),
-          _react2.default.createElement(
-            'div',
-            { className: 'sidebar__section' },
             'ペンの種類'
           ),
           _react2.default.createElement(
@@ -1191,6 +1182,13 @@ var App = function (_React$Component5) {
             ),
             _react2.default.createElement(
               'button',
+              { className: 'app__undo',
+                onClick: this._onUndoButtonClick.bind(this)
+              },
+              _react2.default.createElement('i', { className: 'fa fa-undo', 'aria-hidden': 'true' })
+            ),
+            _react2.default.createElement(
+              'button',
               { className: 'app__trash',
                 onClick: this._onTrashButtonClick.bind(this)
               },
@@ -1203,8 +1201,7 @@ var App = function (_React$Component5) {
           onSettingsChange: this._onSettingsChange.bind(this),
           onGenerateButtonClick: this._onGenerateButtonClick.bind(this),
           onPlayWithMovieButtonClick: this._onPlayWithMovieButtonClick.bind(this),
-          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this),
-          onUndoButtonClick: this._onUndoButtonClick.bind(this)
+          onFullscreenButtonClick: this._onFullscreenButtonClick.bind(this)
         }),
         this.state.modal
       );
@@ -1371,6 +1368,7 @@ var App = function (_React$Component5) {
     key: '_onTrashButtonClick',
     value: function _onTrashButtonClick() {
       if (window.confirm('キャンバスを全て消去しますか？')) {
+        this.refs.canvas.saveUndoBuffer();
         this.refs.canvas.trash();
       }
     }
