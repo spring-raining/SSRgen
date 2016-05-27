@@ -8,6 +8,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+// toBlob polyfill
+
+
 require('babel-polyfill');
 
 var _co = require('co');
@@ -36,14 +39,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-// toBlob polyfill
-
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var ASSETS = {
   PENCIL_1: 'pencil_1.png',
@@ -88,25 +88,143 @@ function fetchAsset(path) {
   });
 }
 
-function calcDistance(p1, p2) {
-  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-}
+var Point = function () {
+  function Point(x, y) {
+    _classCallCheck(this, Point);
 
-function calcAngle(p1, p2) {
-  return Math.atan2(p2.x - p1.x, p2.y - p1.y);
-}
+    this.x = x;
+    this.y = y;
+  }
+
+  _createClass(Point, [{
+    key: 'toString',
+    value: function toString() {
+      return '(' + this.x.toString() + ', ' + this.y.toString() + ')';
+    }
+  }, {
+    key: 'scale',
+    value: function scale(s) {
+      return new Point(s * this.x, s * this.y);
+    }
+  }, {
+    key: 'add',
+    value: function add(p) {
+      return new Point(this.x + p.x, this.y + p.y);
+    }
+  }, {
+    key: 'sub',
+    value: function sub(p) {
+      return new Point(this.x - p.x, this.y - p.y);
+    }
+  }, {
+    key: 'norm',
+    value: function norm() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+  }, {
+    key: 'normalize',
+    value: function normalize() {
+      var n = this.norm();
+      return new Point(this.x / n, this.y / n);
+    }
+  }, {
+    key: 'innerProd',
+    value: function innerProd(p) {
+      return this.x * p.x + this.y * p.y;
+    }
+  }, {
+    key: 'distanceTo',
+    value: function distanceTo(p) {
+      return Math.sqrt((this.x - p.x) * (this.x - p.x) + (this.y - p.y) * (this.y - p.y));
+    }
+  }, {
+    key: 'angle',
+    value: function angle() {
+      return Math.atan2(this.y, this.x);
+    }
+  }, {
+    key: 'angleBetween',
+    value: function angleBetween(p) {
+      return Math.acos(this.innerProd(p) / (this.norm() * p.norm()));
+    }
+  }]);
+
+  return Point;
+}();
 
 function draw(ctx, pencil, p1, p2) {
   var dw = arguments.length <= 4 || arguments[4] === undefined ? null : arguments[4];
   var dh = arguments.length <= 5 || arguments[5] === undefined ? null : arguments[5];
 
-  var distance = calcDistance(p1, p2);
-  var angle = calcAngle(p1, p2);
+  var distance = p1.distanceTo(p2);
+  var angle = p2.sub(p1).angle();
   var _dw = dw || pencil.width;
   var _dh = dh || pencil.height;
   for (var i = 0; i < distance; i++) {
-    ctx.drawImage(pencil, p1.x + Math.sin(angle) * i - _dw / 2, p1.y + Math.cos(angle) * i - _dh / 2, _dw, _dh);
+    ctx.drawImage(pencil, p1.x + Math.cos(angle) * i - _dw / 2, p1.y + Math.sin(angle) * i - _dh / 2, _dw, _dh);
   }
+}
+
+function drawPoints(ctx, pencil, points) {
+  var dw = arguments.length <= 3 || arguments[3] === undefined ? null : arguments[3];
+  var dh = arguments.length <= 4 || arguments[4] === undefined ? null : arguments[4];
+
+  var len = points.length;
+  for (var i = 0; i <= len - 2; i++) {
+    draw(ctx, pencil, points[i], points[i + 1], dw, dh);
+  }
+}
+
+// ref: en.wikipedia.org/wiki/Centripetal_Catmull–Rom_spline
+function spline(points, resolution, acuteThreshold) {
+  var len = points.length;
+  if (len <= 2) {
+    return points;
+  }
+  var vs = points.slice();
+  vs.unshift(points[0].add(points[0].sub(points[1])));
+  vs.push(points[len - 1].add(points[len - 1].sub(points[len - 2])));
+  var ps = [];
+  var numVs = vs.length;
+  for (var i = 0; i <= numVs - 4; i++) {
+    var s = segment(vs[i], vs[i + 1], vs[i + 2], vs[i + 3], resolution, acuteThreshold);
+    ps = ps.concat(s);
+  }
+  ps.push(points[len - 1]);
+  return ps;
+}
+
+function segment(v0, v1, v2, v3, resolution, acuteThreshold) {
+  var g1 = v0.sub(v1).angleBetween(v2.sub(v1));
+  var g2 = v1.sub(v2).angleBetween(v3.sub(v2));
+  if (0 < g1 && g1 < Math.PI && g1 < acuteThreshold) {
+    var t = v2.sub(v1).normalize();
+    var v = v0.sub(v1);
+    var n = v.scale(t.innerProd(t)).sub(t.scale(t.innerProd(v))).normalize();
+    v0 = v1.add(t.scale(v.innerProd(t)).add(n.scale(-v.innerProd(n))));
+  }
+  if (0 < g2 && g2 < Math.PI && g2 < acuteThreshold) {
+    var _t = v1.sub(v2).normalize();
+    var _v = v3.sub(v2);
+    var _n = _v.scale(_t.innerProd(_t)).sub(_t.scale(_t.innerProd(_v))).normalize();
+    v3 = v2.add(_t.scale(_v.innerProd(_t)).add(_n.scale(-_v.innerProd(_n))));
+  }
+  var t0 = 0;
+  var t1 = Math.sqrt(v0.distanceTo(v1)) + t0;
+  var t2 = Math.sqrt(v1.distanceTo(v2)) + t1;
+  var t3 = Math.sqrt(v2.distanceTo(v3)) + t2;
+  var ps = [];
+  var dt = (t2 - t1) / resolution;
+  for (var i = 0, _t2 = t1; i < resolution; i++, _t2 += dt) {
+    var a0 = v0.scale((t1 - _t2) / (t1 - t0)).add(v1.scale((_t2 - t0) / (t1 - t0)));
+    var a1 = v1.scale((t2 - _t2) / (t2 - t1)).add(v2.scale((_t2 - t1) / (t2 - t1)));
+    var a2 = v2.scale((t3 - _t2) / (t3 - t2)).add(v3.scale((_t2 - t2) / (t3 - t2)));
+    var b0 = a0.scale((t2 - _t2) / (t2 - t0)).add(a1.scale((_t2 - t0) / (t2 - t0)));
+    var b1 = a1.scale((t3 - _t2) / (t3 - t1)).add(a2.scale((_t2 - t1) / (t3 - t1)));
+    var c = b0.scale((t2 - _t2) / (t2 - t1)).add(b1.scale((_t2 - t1) / (t2 - t1)));
+    ps.push(c);
+  }
+  return ps;
 }
 
 function canvasToObjectURL(canvas) {
@@ -129,10 +247,10 @@ var Layer = function (_React$Component) {
     _this.state = {
       ctx: null,
       commandQueue: [],
-      runningCommand: null,
-      undoBuffer: null,
-      swapBuffer: null
+      runningCommand: null
     };
+    _this.undoBuffer = null;
+    _this.swapBuffer = null;
     return _this;
   }
 
@@ -216,18 +334,12 @@ var Layer = function (_React$Component) {
   }, {
     key: 'saveUndoBuffer',
     value: function saveUndoBuffer() {
-      var undoBuffer = void 0;
-      if (!this.state.undoBuffer) {
-        undoBuffer = document.createElement('canvas');
-        undoBuffer.width = 1280;
-        undoBuffer.height = 720;
-        this.setState({
-          undoBuffer: undoBuffer
-        });
-      } else {
-        undoBuffer = this.state.undoBuffer;
+      if (!this.undoBuffer) {
+        this.undoBuffer = document.createElement('canvas');
+        this.undoBuffer.width = 1280;
+        this.undoBuffer.height = 720;
       }
-      var undoCtx = undoBuffer.getContext('2d');
+      var undoCtx = this.undoBuffer.getContext('2d');
       undoCtx.globalCompositeOperation = "source-over";
       undoCtx.shadowBlur = 0;
       undoCtx.clearRect(0, 0, 1280, 720);
@@ -239,37 +351,25 @@ var Layer = function (_React$Component) {
       this.state.ctx.globalCompositeOperation = "source-over";
       this.state.ctx.shadowBlur = 0;
       this.state.ctx.clearRect(0, 0, 1280, 720);
-      if (this.state.undoBuffer) {
-        this.state.ctx.drawImage(this.state.undoBuffer, 0, 0);
+      if (this.undoBuffer) {
+        this.state.ctx.drawImage(this.undoBuffer, 0, 0);
       }
     }
   }, {
     key: 'swapUndoBuffer',
     value: function swapUndoBuffer() {
-      var undoBuffer = void 0;
-      if (!this.state.undoBuffer) {
-        undoBuffer = document.createElement('canvas');
-        undoBuffer.width = 1280;
-        undoBuffer.height = 720;
-        this.setState({
-          undoBuffer: undoBuffer
-        });
-      } else {
-        undoBuffer = this.state.undoBuffer;
+      if (!this.undoBuffer) {
+        this.undoBuffer = document.createElement('canvas');
+        this.undoBuffer.width = 1280;
+        this.undoBuffer.height = 720;
       }
-      var swapBuffer = void 0;
-      if (!this.state.swapBuffer) {
-        swapBuffer = document.createElement('canvas');
-        swapBuffer.width = 1280;
-        swapBuffer.height = 720;
-        this.setState({
-          swapBuffer: swapBuffer
-        });
-      } else {
-        swapBuffer = this.state.swapBuffer;
+      if (!this.swapBuffer) {
+        this.swapBuffer = document.createElement('canvas');
+        this.swapBuffer.width = 1280;
+        this.swapBuffer.height = 720;
       }
-      var undoCtx = undoBuffer.getContext('2d');
-      var swapCtx = swapBuffer.getContext('2d');
+      var undoCtx = this.undoBuffer.getContext('2d');
+      var swapCtx = this.swapBuffer.getContext('2d');
       swapCtx.globalCompositeOperation = "source-over";
       swapCtx.shadowBlur = 0;
       swapCtx.clearRect(0, 0, 1280, 720);
@@ -277,11 +377,11 @@ var Layer = function (_React$Component) {
       this.state.ctx.globalCompositeOperation = "source-over";
       this.state.ctx.shadowBlur = 0;
       this.state.ctx.clearRect(0, 0, 1280, 720);
-      this.state.ctx.drawImage(undoBuffer, 0, 0);
+      this.state.ctx.drawImage(this.undoBuffer, 0, 0);
       undoCtx.globalCompositeOperation = "source-over";
       undoCtx.shadowBlur = 0;
       undoCtx.clearRect(0, 0, 1280, 720);
-      undoCtx.drawImage(swapBuffer, 0, 0);
+      undoCtx.drawImage(this.swapBuffer, 0, 0);
     }
   }]);
 
@@ -313,8 +413,10 @@ var Canvas = function (_React$Component2) {
       topLayerPencilSize: 8,
       topShadowLayerCommand: null,
       bottomLayerCommand: null,
-      bottomLayerPencilSize: 20
+      bottomLayerPencilSize: 20,
+      sketchLayerCommand: null
     };
+    _this3.points = [];
     return _this3;
   }
 
@@ -355,6 +457,8 @@ var Canvas = function (_React$Component2) {
           command: this.state.topShadowLayerCommand }),
         _react2.default.createElement(Layer, { ref: 'top',
           command: this.state.topLayerCommand }),
+        _react2.default.createElement(Layer, { ref: 'sketch',
+          command: this.state.sketchLayerCommand }),
         _react2.default.createElement(Layer, { ref: 'orb',
           initialize: function initialize(ctx) {
             ctx.drawImage(_this4.props.assets.ORB, 0, 0);
@@ -386,10 +490,7 @@ var Canvas = function (_React$Component2) {
       var offsetX = (this.props.windowWidth - 1280 * scale) / 2;
       var offsetY = (this.props.windowHeight - 720 * scale) / 2;
 
-      return {
-        x: (e.clientX - offsetX) / scale,
-        y: (e.clientY - offsetY) / scale
-      };
+      return new Point((e.clientX - offsetX) / scale, (e.clientY - offsetY) / scale);
     }
   }, {
     key: 'getPencilBG',
@@ -508,9 +609,11 @@ var Canvas = function (_React$Component2) {
     key: '_onCanvasMouseDown',
     value: function _onCanvasMouseDown(e) {
       this.saveUndoBuffer();
+      var currentPoint = this.getPoint.bind(this)(e);
       this.setState({
-        mousePos: this.getPoint.bind(this)(e)
+        mousePos: currentPoint
       });
+      this.points = [currentPoint];
     }
   }, {
     key: '_onCanvasMouseMove',
@@ -521,7 +624,7 @@ var Canvas = function (_React$Component2) {
 
       if (this.state.mousePos) {
         var _ret = function () {
-          var lastPoint = { x: _this6.state.mousePos.x, y: _this6.state.mousePos.y };
+          var lastPoint = new Point(_this6.state.mousePos.x, _this6.state.mousePos.y);
           var pencil = _this6.props.assets[_this6.props.settings.pencilType];
           var pencilSize = PENCIL_SIZE[_this6.props.settings.pencilType];
 
@@ -531,67 +634,84 @@ var Canvas = function (_React$Component2) {
             };
           }
 
-          var topLayerCommand = function topLayerCommand(ctx) {
-            return new Promise(function (resolve) {
-              ctx.globalCompositeOperation = 'source-over';
-              draw(ctx, pencil, lastPoint, currentPoint, pencilSize.top[0], pencilSize.top[1]);
-              resolve(ctx);
+          if (_this6.props.settings.drawMode === 'eraser') {
+            var eraserCommand = function eraserCommand(ctx) {
+              return new Promise(function (resolve) {
+                ctx.globalCompositeOperation = 'destination-out';
+                draw(ctx, pencil, lastPoint, currentPoint, pencilSize.bottom[0] * 2, pencilSize.bottom[1] * 2);
+                resolve(ctx);
+              });
+            };
+
+            _this6.setState({
+              topLayerCommand: !_this6.props.settings.enableTopLayer ? null : eraserCommand,
+              topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.lightMode ? null : eraserCommand,
+              bottomLayerCommand: !_this6.props.settings.enableBottomLayer ? null : eraserCommand,
+              mousePos: currentPoint
             });
-          };
+          } else {
+            var topLayerCommand = function topLayerCommand(ctx) {
+              return new Promise(function (resolve) {
+                ctx.globalCompositeOperation = 'source-over';
+                draw(ctx, pencil, lastPoint, currentPoint, pencilSize.top[0], pencilSize.top[1]);
+                resolve(ctx);
+              });
+            };
 
-          var topShadowLayerCommand = function topShadowLayerCommand(ctx) {
-            return new Promise(function (resolve) {
-              ctx.globalCompositeOperation = 'source-over';
-              ctx.shadowBlur = 8;
-              ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-              draw(ctx, pencil, lastPoint, currentPoint, pencilSize.top[0], pencilSize.top[1]);
-              resolve(ctx);
-            });
-          };
+            var topShadowLayerCommand = function topShadowLayerCommand(ctx) {
+              return new Promise(function (resolve) {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                draw(ctx, pencil, lastPoint, currentPoint, pencilSize.top[0], pencilSize.top[1]);
+                resolve(ctx);
+              });
+            };
 
-          var bottomLayerCommand = function bottomLayerCommand(ctx) {
-            return (0, _co2.default)(regeneratorRuntime.mark(function _callee3() {
-              return regeneratorRuntime.wrap(function _callee3$(_context3) {
-                while (1) {
-                  switch (_context3.prev = _context3.next) {
-                    case 0:
-                      ctx.globalCompositeOperation = 'source-over';
-                      draw(ctx, pencil, lastPoint, currentPoint, pencilSize.bottom[0], pencilSize.bottom[1]);
+            var bottomLayerCommand = function bottomLayerCommand(ctx) {
+              return (0, _co2.default)(regeneratorRuntime.mark(function _callee3() {
+                return regeneratorRuntime.wrap(function _callee3$(_context3) {
+                  while (1) {
+                    switch (_context3.prev = _context3.next) {
+                      case 0:
+                        ctx.globalCompositeOperation = 'source-over';
+                        draw(ctx, pencil, lastPoint, currentPoint, pencilSize.bottom[0], pencilSize.bottom[1]);
 
-                      if (this.props.settings.lightMode) {
+                        if (this.props.settings.lightMode) {
+                          _context3.next = 5;
+                          break;
+                        }
+
                         _context3.next = 5;
-                        break;
-                      }
+                        return this.drawGradientEffect.bind(this)(ctx);
 
-                      _context3.next = 5;
-                      return this.drawGradientEffect.bind(this)(ctx);
+                      case 5:
+                        return _context3.abrupt('return', ctx);
 
-                    case 5:
-                      return _context3.abrupt('return', ctx);
-
-                    case 6:
-                    case 'end':
-                      return _context3.stop();
+                      case 6:
+                      case 'end':
+                        return _context3.stop();
+                    }
                   }
-                }
-              }, _callee3, this);
-            }).bind(_this6));
-          };
+                }, _callee3, this);
+              }).bind(_this6));
+            };
 
-          var eraserCommand = function eraserCommand(ctx) {
-            return new Promise(function (resolve) {
-              ctx.globalCompositeOperation = 'destination-out';
-              draw(ctx, pencil, lastPoint, currentPoint, pencilSize.bottom[0] * 2, pencilSize.bottom[1] * 2);
-              resolve(ctx);
-            });
-          };
-
-          _this6.setState({
-            topLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topLayerCommand,
-            topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.lightMode ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : topShadowLayerCommand,
-            bottomLayerCommand: !_this6.props.settings.enableBottomLayer ? null : _this6.props.settings.drawMode === 'eraser' ? eraserCommand : bottomLayerCommand,
-            mousePos: currentPoint
-          });
+            if (_this6.props.settings.enableInterpolation) {
+              _this6.setState({
+                sketchLayerCommand: topLayerCommand,
+                mousePos: currentPoint
+              });
+              _this6.points.push(currentPoint);
+            } else {
+              _this6.setState({
+                topLayerCommand: !_this6.props.settings.enableTopLayer ? null : topLayerCommand,
+                topShadowLayerCommand: !_this6.props.settings.enableTopLayer ? null : _this6.props.settings.lightMode ? null : topShadowLayerCommand,
+                bottomLayerCommand: !_this6.props.settings.enableBottomLayer ? null : bottomLayerCommand,
+                mousePos: currentPoint
+              });
+            }
+          }
         }();
 
         if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
@@ -602,37 +722,111 @@ var Canvas = function (_React$Component2) {
     value: function _onCanvasMouseUp(e) {
       var _this7 = this;
 
-      var bottomLayerCommand = function bottomLayerCommand(ctx) {
-        return (0, _co2.default)(regeneratorRuntime.mark(function _callee4() {
-          return regeneratorRuntime.wrap(function _callee4$(_context4) {
-            while (1) {
-              switch (_context4.prev = _context4.next) {
-                case 0:
-                  if (!this.props.settings.lightMode) {
-                    _context4.next = 3;
-                    break;
+      if (this.props.settings.enableInterpolation) {
+        (function () {
+          var pencil = _this7.props.assets[_this7.props.settings.pencilType];
+          var pencilSize = PENCIL_SIZE[_this7.props.settings.pencilType];
+          var points = spline(_this7.points, 10, _this7.props.settings.acuteThreshold * Math.PI / 180);
+          _this7.points = [];
+
+          var topLayerCommand = function topLayerCommand(ctx) {
+            return new Promise(function (resolve) {
+              ctx.globalCompositeOperation = 'source-over';
+              drawPoints(ctx, pencil, points, pencilSize.top[0], pencilSize.top[1]);
+              resolve(ctx);
+            });
+          };
+
+          var topShadowLayerCommand = function topShadowLayerCommand(ctx) {
+            return new Promise(function (resolve) {
+              ctx.globalCompositeOperation = 'source-over';
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+              drawPoints(ctx, pencil, points, pencilSize.top[0], pencilSize.top[1]);
+              resolve(ctx);
+            });
+          };
+
+          var bottomLayerCommand = function bottomLayerCommand(ctx) {
+            return (0, _co2.default)(regeneratorRuntime.mark(function _callee4() {
+              return regeneratorRuntime.wrap(function _callee4$(_context4) {
+                while (1) {
+                  switch (_context4.prev = _context4.next) {
+                    case 0:
+                      ctx.globalCompositeOperation = 'source-over';
+                      drawPoints(ctx, pencil, points, pencilSize.bottom[0], pencilSize.bottom[1]);
+                      _context4.next = 4;
+                      return this.drawGradientEffect.bind(this)(ctx);
+
+                    case 4:
+                      return _context4.abrupt('return', ctx);
+
+                    case 5:
+                    case 'end':
+                      return _context4.stop();
                   }
+                }
+              }, _callee4, this);
+            }).bind(_this7));
+          };
 
-                  _context4.next = 3;
-                  return this.drawGradientEffect.bind(this)(ctx);
+          var sketchLayerCommand = function sketchLayerCommand(ctx) {
+            return new Promise(function (resolve) {
+              ctx.clearRect(0, 0, 1280, 720);
+              resolve(ctx);
+            });
+          };
 
-                case 3:
-                  return _context4.abrupt('return', ctx);
+          _this7.setState({
+            mousePos: null,
+            topLayerCommand: !_this7.props.settings.enableTopLayer ? null : topLayerCommand,
+            topShadowLayerCommand: !_this7.props.settings.enableTopLayer ? null : _this7.props.settings.lightMode ? null : topShadowLayerCommand,
+            bottomLayerCommand: !_this7.props.settings.enableBottomLayer ? null : bottomLayerCommand,
+            sketchLayerCommand: sketchLayerCommand
+          });
+        })();
+      } else {
+        var _bottomLayerCommand = function _bottomLayerCommand(ctx) {
+          return (0, _co2.default)(regeneratorRuntime.mark(function _callee5() {
+            return regeneratorRuntime.wrap(function _callee5$(_context5) {
+              while (1) {
+                switch (_context5.prev = _context5.next) {
+                  case 0:
+                    if (!this.props.settings.lightMode) {
+                      _context5.next = 3;
+                      break;
+                    }
 
-                case 4:
-                case 'end':
-                  return _context4.stop();
+                    _context5.next = 3;
+                    return this.drawGradientEffect.bind(this)(ctx);
+
+                  case 3:
+                    return _context5.abrupt('return', ctx);
+
+                  case 4:
+                  case 'end':
+                    return _context5.stop();
+                }
               }
-            }
-          }, _callee4, this);
-        }).bind(_this7));
-      };
+            }, _callee5, this);
+          }).bind(_this7));
+        };
 
-      this.setState({
-        mousePos: null,
-        topLayerCommand: null,
-        bottomLayerCommand: bottomLayerCommand
-      });
+        var _sketchLayerCommand = function _sketchLayerCommand(ctx) {
+          return new Promise(function (resolve) {
+            ctx.clearRect(0, 0, 1280, 720);
+            resolve(ctx);
+          });
+        };
+
+        this.setState({
+          mousePos: null,
+          topLayerCommand: null,
+          topShadowLayerCommand: null,
+          bottomLayerCommand: _bottomLayerCommand,
+          sketchLayerCommand: _sketchLayerCommand
+        });
+      }
     }
   }, {
     key: '_onCanvasTouchStart',
@@ -852,6 +1046,19 @@ var Sidebar = function (_React$Component3) {
                   onChange: this._onSettingsChangeClick({ enableBottomLayer: !this.props.settings.enableBottomLayer })
                 }),
                 '背面を描く'
+              )
+            ),
+            _react2.default.createElement(
+              'label',
+              null,
+              _react2.default.createElement(
+                'li',
+                null,
+                _react2.default.createElement('input', { type: 'checkbox',
+                  checked: this.props.settings.enableInterpolation,
+                  onChange: this._onSettingsChangeClick({ enableInterpolation: !this.props.settings.enableInterpolation })
+                }),
+                '線を滑らかにする'
               )
             )
           ),
@@ -1101,8 +1308,10 @@ var App = function (_React$Component5) {
         lightMode: false,
         characterTitle: '',
         characterName: '',
-        characterImage: null
-      },
+        characterImage: null,
+        enableInterpolation: true,
+        acuteThreshold: 10 },
+      // TODO: editable?
       windowWidth: 1280,
       windowHeight: 720,
       fullscreen: false,
@@ -1268,44 +1477,14 @@ var App = function (_React$Component5) {
   }, {
     key: '_onGenerateButtonClick',
     value: function _onGenerateButtonClick() {
-      (0, _co2.default)(regeneratorRuntime.mark(function _callee5() {
-        var canvas, objectURL;
-        return regeneratorRuntime.wrap(function _callee5$(_context5) {
-          while (1) {
-            switch (_context5.prev = _context5.next) {
-              case 0:
-                _context5.next = 2;
-                return this.refs.canvas.generate();
-
-              case 2:
-                canvas = _context5.sent;
-                _context5.next = 5;
-                return canvasToObjectURL(canvas);
-
-              case 5:
-                objectURL = _context5.sent;
-
-                this.popupSaveModal.bind(this)(objectURL);
-
-              case 7:
-              case 'end':
-                return _context5.stop();
-            }
-          }
-        }, _callee5, this);
-      }).bind(this));
-    }
-  }, {
-    key: '_onPlayWithMovieButtonClick',
-    value: function _onPlayWithMovieButtonClick() {
       (0, _co2.default)(regeneratorRuntime.mark(function _callee6() {
-        var canvas, objectURL, image;
+        var canvas, objectURL;
         return regeneratorRuntime.wrap(function _callee6$(_context6) {
           while (1) {
             switch (_context6.prev = _context6.next) {
               case 0:
                 _context6.next = 2;
-                return this.refs.canvas.generate(true);
+                return this.refs.canvas.generate();
 
               case 2:
                 canvas = _context6.sent;
@@ -1314,6 +1493,36 @@ var App = function (_React$Component5) {
 
               case 5:
                 objectURL = _context6.sent;
+
+                this.popupSaveModal.bind(this)(objectURL);
+
+              case 7:
+              case 'end':
+                return _context6.stop();
+            }
+          }
+        }, _callee6, this);
+      }).bind(this));
+    }
+  }, {
+    key: '_onPlayWithMovieButtonClick',
+    value: function _onPlayWithMovieButtonClick() {
+      (0, _co2.default)(regeneratorRuntime.mark(function _callee7() {
+        var canvas, objectURL, image;
+        return regeneratorRuntime.wrap(function _callee7$(_context7) {
+          while (1) {
+            switch (_context7.prev = _context7.next) {
+              case 0:
+                _context7.next = 2;
+                return this.refs.canvas.generate(true);
+
+              case 2:
+                canvas = _context7.sent;
+                _context7.next = 5;
+                return canvasToObjectURL(canvas);
+
+              case 5:
+                objectURL = _context7.sent;
                 image = new Image();
 
                 image.src = objectURL;
@@ -1321,10 +1530,10 @@ var App = function (_React$Component5) {
 
               case 9:
               case 'end':
-                return _context6.stop();
+                return _context7.stop();
             }
           }
-        }, _callee6, this);
+        }, _callee7, this);
       }).bind(this));
     }
   }, {
@@ -1708,71 +1917,71 @@ var CharacterNameFrame = function (_React$Component7) {
   return CharacterNameFrame;
 }(_react2.default.Component);
 
-(0, _co2.default)(regeneratorRuntime.mark(function _callee7() {
+(0, _co2.default)(regeneratorRuntime.mark(function _callee8() {
   var assets, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, key;
 
-  return regeneratorRuntime.wrap(function _callee7$(_context7) {
+  return regeneratorRuntime.wrap(function _callee8$(_context8) {
     while (1) {
-      switch (_context7.prev = _context7.next) {
+      switch (_context8.prev = _context8.next) {
         case 0:
           assets = {};
           _iteratorNormalCompletion2 = true;
           _didIteratorError2 = false;
           _iteratorError2 = undefined;
-          _context7.prev = 4;
+          _context8.prev = 4;
           _iterator2 = Object.keys(ASSETS)[Symbol.iterator]();
 
         case 6:
           if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-            _context7.next = 14;
+            _context8.next = 14;
             break;
           }
 
           key = _step2.value;
-          _context7.next = 10;
+          _context8.next = 10;
           return fetchAsset(ASSETS[key]);
 
         case 10:
-          assets[key] = _context7.sent;
+          assets[key] = _context8.sent;
 
         case 11:
           _iteratorNormalCompletion2 = true;
-          _context7.next = 6;
+          _context8.next = 6;
           break;
 
         case 14:
-          _context7.next = 20;
+          _context8.next = 20;
           break;
 
         case 16:
-          _context7.prev = 16;
-          _context7.t0 = _context7['catch'](4);
+          _context8.prev = 16;
+          _context8.t0 = _context8['catch'](4);
           _didIteratorError2 = true;
-          _iteratorError2 = _context7.t0;
+          _iteratorError2 = _context8.t0;
 
         case 20:
-          _context7.prev = 20;
-          _context7.prev = 21;
+          _context8.prev = 20;
+          _context8.prev = 21;
 
           if (!_iteratorNormalCompletion2 && _iterator2.return) {
             _iterator2.return();
           }
 
         case 23:
-          _context7.prev = 23;
+          _context8.prev = 23;
 
           if (!_didIteratorError2) {
-            _context7.next = 26;
+            _context8.next = 26;
             break;
           }
 
           throw _iteratorError2;
 
         case 26:
-          return _context7.finish(23);
+          return _context8.finish(23);
 
         case 27:
-          return _context7.finish(20);
+          return _context8.finish(20);
 
         case 28:
           ;
@@ -1781,10 +1990,10 @@ var CharacterNameFrame = function (_React$Component7) {
 
         case 30:
         case 'end':
-          return _context7.stop();
+          return _context8.stop();
       }
     }
-  }, _callee7, this, [[4, 16, 20, 28], [21,, 23, 27]]);
+  }, _callee8, this, [[4, 16, 20, 28], [21,, 23, 27]]);
 }));
 
 },{"./../package.json":469,"babel-polyfill":2,"blueimp-canvas-to-blob":4,"co":5,"react":468,"react-dom":329,"react-social":330}],2:[function(require,module,exports){
