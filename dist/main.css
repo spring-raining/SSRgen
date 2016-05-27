@@ -536,6 +536,12 @@ ul.sidebar__choice {
 .sign-video-modal .modal {
   max-width: 750px;
   max-height: 550px; }
+  .sign-video-modal .modal div.controls {
+    margin: 5px 0; }
+  .sign-video-modal .modal input[type="text"] {
+    width: 150px; }
+  .sign-video-modal .modal input[type="file"] {
+    display: none; }
 
 .sign-video-container {
   position: relative;

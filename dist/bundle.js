@@ -1567,7 +1567,7 @@ var MoviePlayer = function (_React$Component6) {
         ),
         _react2.default.createElement(
           'div',
-          null,
+          { className: 'controls' },
           _react2.default.createElement(
             'button',
             { onClick: this.rewindButtonClick.bind(this) },
@@ -1590,15 +1590,18 @@ var MoviePlayer = function (_React$Component6) {
         ),
         _react2.default.createElement(
           'div',
-          null,
-          'キャラ画像 ',
+          { className: 'controls' },
           _react2.default.createElement('input', { type: 'file',
             ref: 'file',
-            onChange: this.fileSelect.bind(this) })
-        ),
-        _react2.default.createElement(
-          'p',
-          null,
+            onChange: this.fileSelect.bind(this) }),
+          _react2.default.createElement(
+            'button',
+            { onClick: function onClick() {
+                return _this15.refs.file.click();
+              } },
+            'キャラ画像を登録'
+          ),
+          ' ',
           _react2.default.createElement(
             'small',
             null,

@@ -224,6 +224,15 @@ ul.sidebar__choice {
 .sign-video-modal .modal {
   max-width: 750px;
   max-height: 550px;
+  div.controls {
+    margin: 5px 0;
+  }
+  input[type="text"] {
+    width: 150px;
+  }
+  input[type="file"] {
+    display: none;
+  }
 }
 
 .sign-video-container {
