@@ -270,41 +270,12 @@ ul.sidebar__choice {
     transform: scale(0.4) rotateZ(-10deg) translateX(300px);
     opacity: 0;
   }
-  .character-title {
-    position: absolute;
-    top: 50px;
-    left: 320px;
-    right: 0;
-    line-height: 45px;
-    font-size: 45px;
-    font-weight: bold;
-    text-shadow:
-      2px  2px 0 white, -2px  2px 0 white,
-      2px -2px 0 white, -2px -2px 0 white,
-      5px 5px 5px gray;
-  }
-  .character-name {
-    position: absolute;
-    top: 110px;
-    left: 0;
-    right: 0;
-    line-height: 90px;
-    font-size: 90px;
-    font-weight: bold;
-    text-align: center;
-    text-shadow:
-      2px  2px 0 white, -2px  2px 0 white,
-      2px -2px 0 white, -2px -2px 0 white,
-      5px 5px 5px gray;
-  }
-  @mixin type-color($type, $color) {
+  @mixin type-color($type) {
     &.#{$type} {
       background-image: url('#{$type}_frame.png');
-      .character-title { color: $color; }
-      .character-name { color: $color; }
     }
   }
-  @include type-color('cool', #1a5ae0);
-  @include type-color('cute', #ff367d);
-  @include type-color('passion', #e87902);
+  @include type-color('cool');
+  @include type-color('cute');
+  @include type-color('passion');
 }

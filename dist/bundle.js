@@ -1628,23 +1628,69 @@ var CharacterNameFrame = function (_React$Component7) {
     key: 'render',
     value: function render() {
       var classNames = ['character-frame', this.props.type];
+      var fillColors = CharacterNameFrame.getFillColors()[this.props.type];
       if (this.props.standBy) classNames.push('stand-by');
       return _react2.default.createElement(
         'div',
         { className: classNames.join(' ') },
         _react2.default.createElement(
-          'div',
-          { className: 'character-title' },
-          '[',
-          this.props.title,
-          ']'
-        ),
-        _react2.default.createElement(
-          'div',
-          { className: 'character-name' },
-          this.props.name
+          'svg',
+          { width: '100%', height: '100%' },
+          _react2.default.createElement(
+            'defs',
+            null,
+            _react2.default.createElement(
+              'linearGradient',
+              { id: 'grad', gradientTransform: 'rotate(90)' },
+              _react2.default.createElement('stop', { offset: '0', stopColor: fillColors[0] }),
+              _react2.default.createElement('stop', { offset: '1', stopColor: fillColors[1] })
+            ),
+            _react2.default.createElement(
+              'filter',
+              { id: 'filt' },
+              _react2.default.createElement('feGaussianBlur', { 'in': 'SourceAlpha', stdDeviation: '2' }),
+              _react2.default.createElement('feOffset', { dx: '4', dy: '4' }),
+              _react2.default.createElement(
+                'feComponentTransfer',
+                null,
+                _react2.default.createElement('feFuncA', { type: 'linear', slope: '0.5' })
+              ),
+              _react2.default.createElement(
+                'feMerge',
+                null,
+                _react2.default.createElement('feMergeNode', null),
+                _react2.default.createElement('feMergeNode', { 'in': 'SourceGraphic' })
+              )
+            )
+          ),
+          _react2.default.createElement(
+            'g',
+            { stroke: 'white', strokeWidth: '8', fontFamily: 'sans-serif', fontWeight: 'bold', paintOrder: 'stroke',
+              fill: 'url(#grad)', filter: 'url(#filt)', strokeLinejoin: 'round' },
+            _react2.default.createElement(
+              'text',
+              { fontSize: '42px', x: '320px', y: '85px', textAnchor: 'left' },
+              '[',
+              this.props.title,
+              ']'
+            ),
+            _react2.default.createElement(
+              'text',
+              { fontSize: '90px', x: '400px', y: '190px', textAnchor: 'middle' },
+              this.props.name
+            )
+          )
         )
       );
+    }
+  }], [{
+    key: 'getFillColors',
+    value: function getFillColors() {
+      return {
+        cute: ['#ff7abd', '#ff1a8c'],
+        cool: ['#59b4de', '#2180de'],
+        passion: ['#ffaa00', '#fe7700']
+      };
     }
   }]);
 
