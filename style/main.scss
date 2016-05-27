@@ -196,6 +196,9 @@ ul.sidebar__choice {
   background-color: white;
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
   border-radius: 2px;
+  h3 {
+    margin: 0;
+  }
 }
 
 .modal-close {
@@ -212,14 +215,67 @@ ul.sidebar__choice {
   }
 }
 
-.save-modal {
-  h3 {
-    margin: 0;
-  }
-}
-
 .save-modal__img {
   width: 480px;
   padding: 16px 0;
   display: block;
+}
+
+.sign-video-modal .modal {
+  max-width: 750px;
+  max-height: 550px;
+  div.controls {
+    margin: 5px 0;
+  }
+  input[type="text"] {
+    width: 150px;
+  }
+  input[type="file"] {
+    display: none;
+  }
+}
+
+.sign-video-container {
+  position: relative;
+  overflow: hidden;
+  width: 720px;
+  img {
+    width: 720px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    transition: 0.3s opacity linear;
+    &.hidden {
+      opacity: 0;
+    }
+  }
+  video {
+    width: 720px;
+    display: none; // content drawn onto canvas
+  }
+}
+
+.character-frame {
+  position: absolute;
+  left: 350px;
+  top: 270px;
+  transform-origin: left top;
+  transform: scale(0.4) rotateZ(-10deg);
+  width: 807px;
+  height: 286px;
+  transition: all 0.5s linear;
+  &.stand-by {
+    transition: none;
+    transform: scale(0.4) rotateZ(-10deg) translateX(300px);
+    opacity: 0;
+  }
+  @mixin type-color($type) {
+    &.#{$type} {
+      background-image: url('#{$type}_frame.png');
+    }
+  }
+  @include type-color('cool');
+  @include type-color('cute');
+  @include type-color('passion');
 }
