@@ -34,6 +34,8 @@ var _package2 = _interopRequireDefault(_package);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -1104,7 +1106,10 @@ var App = function (_React$Component5) {
         showBG: true,
         showOrb: true,
         showFlare: true,
-        lightMode: false
+        lightMode: false,
+        characterTitle: '',
+        characterName: '',
+        characterImage: null
       },
       windowWidth: 1280,
       windowHeight: 720,
@@ -1245,7 +1250,9 @@ var App = function (_React$Component5) {
         Modal,
         { className: 'sign-video-modal',
           onCloseButtonClick: this._onCloseButtonClick.bind(this) },
-        _react2.default.createElement(MoviePlayer, { image: image, type: this.state.settings.pencilColor })
+        _react2.default.createElement(MoviePlayer, { image: image,
+          settings: this.state.settings,
+          onSettingsChange: this._onSettingsChange.bind(this) })
       );
       this.setState({
         modal: modal
@@ -1381,10 +1388,14 @@ var MoviePlayer = function (_React$Component6) {
     var _this14 = _possibleConstructorReturn(this, Object.getPrototypeOf(MoviePlayer).call(this, props));
 
     _this14.state = {
-      nameStandBy: true,
-      characterTitle: '',
-      characterName: '',
-      background: null
+      characterTitle: props.settings.characterTitle,
+      characterName: props.settings.characterName,
+      characterImage: props.settings.characterImage,
+      nameStandBy: true
+    };
+    _this14._settingsChange = function (key, value) {
+      _this14.setState(_defineProperty({}, key, value));
+      _this14.props.onSettingsChange(_defineProperty({}, key, value));
     };
     return _this14;
   }
@@ -1423,13 +1434,14 @@ var MoviePlayer = function (_React$Component6) {
       var height = _refs$canvas2.height;
 
       var alpha = this.easeAlpha(time, 7, 20, 0);
-      if (!this.state.background || alpha <= 0) return;
-      var iw = this.state.background.width;
-      var ih = this.state.background.height;
+      var image = this.state.characterImage;
+      if (!image || alpha <= 0) return;
+      var iw = image.width;
+      var ih = image.height;
       var scale = width / height > iw / ih ? width / iw : height / ih;
       var x = (width - iw * scale) / 2;
       var y = (height - ih * scale) / 2;
-      this.ctx.drawImage(this.state.background, x, y, iw * scale, ih * scale);
+      this.ctx.drawImage(image, x, y, iw * scale, ih * scale);
     }
   }, {
     key: 'draw',
@@ -1462,7 +1474,7 @@ var MoviePlayer = function (_React$Component6) {
     value: function characterLoad(event) {
       var img = new Image();
       img.src = event.target.result;
-      this.setState({ background: img });
+      this._settingsChange('characterImage', img);
     }
   }, {
     key: 'paste',
@@ -1527,7 +1539,7 @@ var MoviePlayer = function (_React$Component6) {
         reader.onloadend = this.characterLoad.bind(this);
         reader.readAsDataURL(file);
       } else {
-        this.setState({ background: null });
+        this._onSettingsChange('characterImage', null);
       }
     }
   }, {
@@ -1550,7 +1562,7 @@ var MoviePlayer = function (_React$Component6) {
           _react2.default.createElement('video', { ref: 'video', src: 'ssr_drawn.mp4', autoPlay: true }),
           _react2.default.createElement(CharacterNameFrame, { title: this.state.characterTitle,
             name: this.state.characterName,
-            type: this.props.type,
+            type: this.props.settings.pencilColor,
             standBy: this.state.nameStandBy })
         ),
         _react2.default.createElement(
@@ -1566,14 +1578,14 @@ var MoviePlayer = function (_React$Component6) {
             placeholder: '肩書き',
             value: this.state.characterTitle,
             onChange: function onChange(ev) {
-              return _this15.setState({ characterTitle: ev.target.value });
+              return _this15._settingsChange('characterTitle', ev.target.value);
             } }),
           ']  ',
           _react2.default.createElement('input', { type: 'text',
             placeholder: '名前',
             value: this.state.characterName,
             onChange: function onChange(ev) {
-              return _this15.setState({ characterName: ev.target.value });
+              return _this15._settingsChange('characterName', ev.target.value);
             } })
         ),
         _react2.default.createElement(
