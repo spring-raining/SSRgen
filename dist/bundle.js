@@ -29293,7 +29293,7 @@ module.exports = require('./lib/React');
 },{"./lib/React":356}],469:[function(require,module,exports){
 module.exports={
   "name": "ssrgen",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/index.js",
@@ -29309,7 +29309,7 @@ module.exports={
       "email": "susisu2413@yahoo.co.jp",
       "url": "https://susisu.github.io/"
     }, {
-      "name": "yukihop",
+      "name": "ゆきほP",
       "email": "mobacure.black@gmail.com",
       "url": "https://github.com/yukihop"
     }
