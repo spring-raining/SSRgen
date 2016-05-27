@@ -464,6 +464,7 @@ var Canvas = function (_React$Component2) {
       this.refs.top.saveUndoBuffer();
       this.refs.topShadow.saveUndoBuffer();
       this.refs.bottom.saveUndoBuffer();
+      this.props.onBufferUpdate();
     }
   }, {
     key: 'retrieveUndoBuffer',
@@ -1105,7 +1106,8 @@ var App = function (_React$Component5) {
       windowWidth: 1280,
       windowHeight: 720,
       fullscreen: false,
-      modal: null
+      modal: null,
+      undone: false
     };
     return _this11;
   }
@@ -1157,7 +1159,8 @@ var App = function (_React$Component5) {
             assets: this.props.assets,
             settings: this.state.settings,
             windowWidth: this.state.windowWidth,
-            windowHeight: this.state.windowHeight
+            windowHeight: this.state.windowHeight,
+            onBufferUpdate: this._onBufferUpdate.bind(this)
           }),
           _react2.default.createElement(
             'div',
@@ -1185,7 +1188,7 @@ var App = function (_React$Component5) {
               { className: 'app__undo',
                 onClick: this._onUndoButtonClick.bind(this)
               },
-              _react2.default.createElement('i', { className: 'fa fa-undo', 'aria-hidden': 'true' })
+              _react2.default.createElement('i', { className: 'fa ' + (this.state.undone ? 'fa-repeat' : 'fa-undo'), 'aria-hidden': 'true' })
             ),
             _react2.default.createElement(
               'button',
@@ -1356,6 +1359,9 @@ var App = function (_React$Component5) {
     key: '_onUndoButtonClick',
     value: function _onUndoButtonClick() {
       this.refs.canvas.swapUndoBuffer();
+      this.setState({
+        undone: !this.state.undone
+      });
     }
   }, {
     key: '_onCloseButtonClick',
@@ -1371,6 +1377,13 @@ var App = function (_React$Component5) {
         this.refs.canvas.saveUndoBuffer();
         this.refs.canvas.trash();
       }
+    }
+  }, {
+    key: '_onBufferUpdate',
+    value: function _onBufferUpdate() {
+      this.setState({
+        undone: false
+      });
     }
   }]);
 
