@@ -514,6 +514,8 @@ ul.sidebar__choice {
   background-color: white;
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
   border-radius: 2px; }
+  .modal h3 {
+    margin: 0; }
 
 .modal-close, .modal-close:hover {
   position: absolute;
@@ -526,10 +528,54 @@ ul.sidebar__choice {
   height: 60px;
   font-size: 26px; }
 
-.save-modal h3 {
-  margin: 0; }
-
 .save-modal__img {
   width: 480px;
   padding: 16px 0;
   display: block; }
+
+.sign-video-modal .modal {
+  max-width: 750px;
+  max-height: 550px; }
+  .sign-video-modal .modal div.controls {
+    margin: 5px 0; }
+  .sign-video-modal .modal input[type="text"] {
+    width: 150px; }
+  .sign-video-modal .modal input[type="file"] {
+    display: none; }
+
+.sign-video-container {
+  position: relative;
+  overflow: hidden;
+  width: 720px; }
+  .sign-video-container img {
+    width: 720px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    transition: 0.3s opacity linear; }
+    .sign-video-container img.hidden {
+      opacity: 0; }
+  .sign-video-container video {
+    width: 720px;
+    display: none; }
+
+.character-frame {
+  position: absolute;
+  left: 350px;
+  top: 270px;
+  transform-origin: left top;
+  transform: scale(0.4) rotateZ(-10deg);
+  width: 807px;
+  height: 286px;
+  transition: all 0.5s linear; }
+  .character-frame.stand-by {
+    transition: none;
+    transform: scale(0.4) rotateZ(-10deg) translateX(300px);
+    opacity: 0; }
+  .character-frame.cool {
+    background-image: url("cool_frame.png"); }
+  .character-frame.cute {
+    background-image: url("cute_frame.png"); }
+  .character-frame.passion {
+    background-image: url("passion_frame.png"); }
