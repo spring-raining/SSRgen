@@ -1676,12 +1676,12 @@ var MoviePlayer = function (_React$Component6) {
       var time = this.refs.video.currentTime;
       this.ctx.clearRect(0, 0, width, height);
       this.ctx.globalCompositeOperation = 'lighter';
-      // main sign, displayed largely on center
-      this.drawSign(0, 0, this.easeAlpha(time, 4.5, 7.1, 0.7));
-      // pasted character image
-      this.drawCharacter(time);
       // main video
       this.ctx.drawImage(this.refs.video, 0, 0, width, height);
+      // main sign, displayed largely on center
+      this.drawSign(0, 0, this.easeAlpha(time, 4.5, 7.1, 0.7), 1);
+      // pasted character image
+      this.drawCharacter(time);
       // small sign, displayed with the character
       this.drawSign(0, 200, this.easeAlpha(time, 10, 20, 1), 0.5, 'source-over');
       // black sign, displayed for a moment on the whiteout screen
