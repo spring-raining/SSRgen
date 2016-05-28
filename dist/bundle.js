@@ -1885,8 +1885,24 @@ var CharacterNameFrame = function (_React$Component7) {
           ),
           _react2.default.createElement(
             'g',
-            { stroke: 'white', strokeWidth: '8', fontFamily: 'sans-serif', fontWeight: 'bold', paintOrder: 'stroke',
-              fill: 'url(#grad)', filter: 'url(#filt)', strokeLinejoin: 'round' },
+            { stroke: 'white', strokeWidth: '8', fontFamily: 'sans-serif', fontWeight: 'bold',
+              fill: 'white', filter: 'url(#filt)', strokeLinejoin: 'round' },
+            _react2.default.createElement(
+              'text',
+              { fontSize: '42px', x: '320px', y: '85px', textAnchor: 'left' },
+              '[',
+              this.props.title,
+              ']'
+            ),
+            _react2.default.createElement(
+              'text',
+              { fontSize: '90px', x: '400px', y: '190px', textAnchor: 'middle' },
+              this.props.name
+            )
+          ),
+          _react2.default.createElement(
+            'g',
+            { fill: 'url(#grad)', fontFamily: 'sans-serif', fontWeight: 'bold' },
             _react2.default.createElement(
               'text',
               { fontSize: '42px', x: '320px', y: '85px', textAnchor: 'left' },
