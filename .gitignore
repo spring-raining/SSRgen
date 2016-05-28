@@ -5,3 +5,7 @@ db.json
 node_modules/
 .idea/
 
+# Ignore auto-generated files
+/dist/bundle.js
+/dist/main.css
+
