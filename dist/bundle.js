@@ -227,6 +227,35 @@ function segment(v0, v1, v2, v3, resolution, acuteThreshold) {
   return ps;
 }
 
+function simplify(points, strength) {
+  var len = points.length;
+  if (len <= 2) {
+    return points;
+  } else {
+    var vs = [];
+    for (var i = 0; i <= len - 2; i++) {
+      vs.push(points[i + 1].sub(points[i]));
+    }
+    var ps = [points[0]];
+    var k = 0;
+    for (var _i = 1; _i <= len - 2; _i++) {
+      var d = points[k].distanceTo(points[_i]);
+      if (d > strength) {
+        ps.push(points[_i]);
+        k = _i;
+      } else {
+        var a = vs[_i].sub(vs[k]).norm();
+        if (a > strength) {
+          ps.push(points[_i]);
+          k = _i;
+        }
+      }
+    }
+    ps.push(points[len - 1]);
+    return ps;
+  }
+}
+
 function canvasToObjectURL(canvas) {
   return new Promise(function (resolve, reject) {
     canvas.toBlob(function (blob) {
@@ -697,7 +726,7 @@ var Canvas = function (_React$Component2) {
               }).bind(_this6));
             };
 
-            if (_this6.props.settings.enableInterpolation) {
+            if (_this6.props.settings.enableSmoothing) {
               _this6.setState({
                 sketchLayerCommand: topLayerCommand,
                 mousePos: currentPoint
@@ -722,11 +751,11 @@ var Canvas = function (_React$Component2) {
     value: function _onCanvasMouseUp(e) {
       var _this7 = this;
 
-      if (this.props.settings.enableInterpolation) {
+      if (this.props.settings.enableSmoothing && this.props.settings.drawMode !== 'eraser') {
         (function () {
           var pencil = _this7.props.assets[_this7.props.settings.pencilType];
           var pencilSize = PENCIL_SIZE[_this7.props.settings.pencilType];
-          var points = spline(_this7.points, 10, _this7.props.settings.acuteThreshold * Math.PI / 180);
+          var points = spline(simplify(_this7.points, _this7.props.settings.smoothingStrength), 10, _this7.props.settings.acuteThreshold * Math.PI / 180);
           _this7.points = [];
 
           var topLayerCommand = function topLayerCommand(ctx) {
@@ -879,6 +908,8 @@ var Sidebar = function (_React$Component3) {
   _createClass(Sidebar, [{
     key: 'render',
     value: function render() {
+      var _this9 = this;
+
       return _react2.default.createElement(
         'div',
         { className: 'sidebar ' + (this.state.hidden ? 'hidden' : '') },
@@ -1055,10 +1086,26 @@ var Sidebar = function (_React$Component3) {
                 'li',
                 null,
                 _react2.default.createElement('input', { type: 'checkbox',
-                  checked: this.props.settings.enableInterpolation,
-                  onChange: this._onSettingsChangeClick({ enableInterpolation: !this.props.settings.enableInterpolation })
+                  checked: this.props.settings.enableSmoothing,
+                  onChange: this._onSettingsChangeClick({ enableSmoothing: !this.props.settings.enableSmoothing })
                 }),
                 '線を滑らかにする'
+              )
+            ),
+            _react2.default.createElement(
+              'label',
+              null,
+              _react2.default.createElement(
+                'li',
+                null,
+                '補正の強さ',
+                _react2.default.createElement('input', { type: 'number',
+                  min: '0',
+                  value: this.props.settings.smoothingStrength,
+                  onChange: function onChange(event) {
+                    return _this9._onSettingsChangeClick({ smoothingStrength: event.target.value | 0 })();
+                  }
+                })
               )
             )
           ),
@@ -1237,10 +1284,10 @@ var Sidebar = function (_React$Component3) {
   }, {
     key: '_onSettingsChangeClick',
     value: function _onSettingsChangeClick(changes) {
-      var _this9 = this;
+      var _this10 = this;
 
       return function () {
-        return _this9.props.onSettingsChange(changes);
+        return _this10.props.onSettingsChange(changes);
       };
     }
   }]);
@@ -1293,9 +1340,9 @@ var App = function (_React$Component5) {
   function App(props) {
     _classCallCheck(this, App);
 
-    var _this11 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
+    var _this12 = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
 
-    _this11.state = {
+    _this12.state = {
       settings: {
         drawMode: 'pencil',
         pencilType: 'PENCIL_1',
@@ -1309,7 +1356,8 @@ var App = function (_React$Component5) {
         characterTitle: '',
         characterName: '',
         characterImage: null,
-        enableInterpolation: true,
+        enableSmoothing: true,
+        smoothingStrength: 8,
         acuteThreshold: 10 },
       // TODO: editable?
       windowWidth: 1280,
@@ -1318,18 +1366,18 @@ var App = function (_React$Component5) {
       modal: null,
       undone: false
     };
-    return _this11;
+    return _this12;
   }
 
   _createClass(App, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var _this12 = this;
+      var _this13 = this;
 
       var appDOM = _reactDom2.default.findDOMNode(this.refs.app);
       var fullscreenChangeEvent = function (e) {
-        _this12.setState({
-          fullscreen: !_this12.state.fullscreen
+        _this13.setState({
+          fullscreen: !_this13.state.fullscreen
         });
       }.bind(this);
 
@@ -1339,7 +1387,7 @@ var App = function (_React$Component5) {
       appDOM.addEventListener('MSFullscreenChange', fullscreenChangeEvent);
 
       window.addEventListener('resize', function (e) {
-        _this12.setState({
+        _this13.setState({
           windowWidth: window.innerWidth,
           windowHeight: window.innerHeight
         });
@@ -1353,7 +1401,7 @@ var App = function (_React$Component5) {
   }, {
     key: 'render',
     value: function render() {
-      var _this13 = this;
+      var _this14 = this;
 
       return _react2.default.createElement(
         'div',
@@ -1378,7 +1426,7 @@ var App = function (_React$Component5) {
               'button',
               { className: 'app__pencil ' + (this.state.settings.drawMode === 'pencil' ? '' : 'disabled'),
                 onClick: function () {
-                  return _this13._onSettingsChange({ drawMode: 'pencil' });
+                  return _this14._onSettingsChange({ drawMode: 'pencil' });
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-pencil', 'aria-hidden': 'true' })
@@ -1387,7 +1435,7 @@ var App = function (_React$Component5) {
               'button',
               { className: 'app__eraser ' + (this.state.settings.drawMode === 'eraser' ? '' : 'disabled'),
                 onClick: function () {
-                  return _this13._onSettingsChange({ drawMode: 'eraser' });
+                  return _this14._onSettingsChange({ drawMode: 'eraser' });
                 }.bind(this)
               },
               _react2.default.createElement('i', { className: 'fa fa-eraser', 'aria-hidden': 'true' })
@@ -1605,19 +1653,19 @@ var MoviePlayer = function (_React$Component6) {
   function MoviePlayer(props) {
     _classCallCheck(this, MoviePlayer);
 
-    var _this14 = _possibleConstructorReturn(this, Object.getPrototypeOf(MoviePlayer).call(this, props));
+    var _this15 = _possibleConstructorReturn(this, Object.getPrototypeOf(MoviePlayer).call(this, props));
 
-    _this14.state = {
+    _this15.state = {
       characterTitle: props.settings.characterTitle,
       characterName: props.settings.characterName,
       characterImage: props.settings.characterImage,
       nameStandBy: true
     };
-    _this14._settingsChange = function (key, value) {
-      _this14.setState(_defineProperty({}, key, value));
-      _this14.props.onSettingsChange(_defineProperty({}, key, value));
+    _this15._settingsChange = function (key, value) {
+      _this15.setState(_defineProperty({}, key, value));
+      _this15.props.onSettingsChange(_defineProperty({}, key, value));
     };
-    return _this14;
+    return _this15;
   }
 
   _createClass(MoviePlayer, [{
@@ -1765,7 +1813,7 @@ var MoviePlayer = function (_React$Component6) {
   }, {
     key: 'render',
     value: function render() {
-      var _this15 = this;
+      var _this16 = this;
 
       return _react2.default.createElement(
         'div',
@@ -1798,14 +1846,14 @@ var MoviePlayer = function (_React$Component6) {
             placeholder: '肩書き',
             value: this.state.characterTitle,
             onChange: function onChange(ev) {
-              return _this15._settingsChange('characterTitle', ev.target.value);
+              return _this16._settingsChange('characterTitle', ev.target.value);
             } }),
           ']  ',
           _react2.default.createElement('input', { type: 'text',
             placeholder: '名前',
             value: this.state.characterName,
             onChange: function onChange(ev) {
-              return _this15._settingsChange('characterName', ev.target.value);
+              return _this16._settingsChange('characterName', ev.target.value);
             } })
         ),
         _react2.default.createElement(
@@ -1817,7 +1865,7 @@ var MoviePlayer = function (_React$Component6) {
           _react2.default.createElement(
             'button',
             { onClick: function onClick() {
-                return _this15.refs.file.click();
+                return _this16.refs.file.click();
               } },
             'キャラ画像を登録'
           ),

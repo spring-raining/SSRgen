@@ -463,6 +463,9 @@ ul.sidebar__choice {
   ul.sidebar__choice li {
     margin: 6px 0;
     cursor: pointer; }
+    ul.sidebar__choice li input[type="number"] {
+      text-align: right;
+      width: 48px; }
 
 .sidebar__footnote {
   font-size: 11px;
