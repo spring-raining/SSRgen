@@ -3,10 +3,10 @@
   "version": "1.2.2",
   "description": "SSR Sign Generator",
   "private": true,
-  "main": "lib/index.js",
+  "main": "lib/main.jsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-js": "browserify lib/main.js -o dist/bundle.js -t babelify",
+    "build-js": "browserify lib/main.jsx -o dist/bundle.js -t babelify --extension jsx",
     "build-css": "node-sass -r style -o dist"
   },
   "author": "spring-raining",
