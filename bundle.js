@@ -397,6 +397,10 @@ var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
 
+var _reactDom = require('react-dom');
+
+var _reactDom2 = _interopRequireDefault(_reactDom);
+
 var _package = require('./../package.json');
 
 var _package2 = _interopRequireDefault(_package);
@@ -428,6 +432,7 @@ var Canvas = function (_React$Component) {
       topLayerCommand: null,
       topLayerPencilSize: 8,
       topShadowLayerCommand: null,
+      topShadowBufferLayerCommand: null,
       bottomLayerCommand: null,
       bottomLayerPencilSize: 20,
       sketchLayerCommand: null
@@ -471,6 +476,8 @@ var Canvas = function (_React$Component) {
           command: this.state.bottomLayerCommand }),
         _react2.default.createElement(_layer2.default, { ref: 'topShadow',
           command: this.state.topShadowLayerCommand }),
+        _react2.default.createElement(_layer2.default, { ref: 'topShadowBuffer',
+          command: this.state.topShadowBufferLayerCommand }),
         _react2.default.createElement(_layer2.default, { ref: 'top',
           command: this.state.topLayerCommand }),
         _react2.default.createElement(_layer2.default, { ref: 'sketch',
@@ -669,16 +676,6 @@ var Canvas = function (_React$Component) {
               });
             };
 
-            var topShadowLayerCommand = function topShadowLayerCommand(ctx) {
-              return new Promise(function (resolve) {
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-                draw(ctx, pencil, lastPoint, currentPoint, pencilSize.top[0], pencilSize.top[1]);
-                resolve(ctx);
-              });
-            };
-
             var bottomLayerCommand = function bottomLayerCommand(ctx) {
               return (0, _co2.default)(regeneratorRuntime.mark(function _callee2() {
                 return regeneratorRuntime.wrap(function _callee2$(_context2) {
@@ -717,7 +714,7 @@ var Canvas = function (_React$Component) {
             } else {
               _this4.setState({
                 topLayerCommand: !_this4.props.settings.enableTopLayer ? null : topLayerCommand,
-                topShadowLayerCommand: !_this4.props.settings.enableTopLayer ? null : _this4.props.settings.lightMode ? null : topShadowLayerCommand,
+                topShadowBufferLayerCommand: !_this4.props.settings.enableTopLayer || _this4.props.settings.lightMode ? null : topLayerCommand,
                 bottomLayerCommand: !_this4.props.settings.enableBottomLayer ? null : bottomLayerCommand,
                 mousePos: currentPoint
               });
@@ -733,12 +730,26 @@ var Canvas = function (_React$Component) {
     value: function _onCanvasMouseUp(e) {
       var _this5 = this;
 
-      if (this.props.settings.enableSmoothing && this.props.settings.drawMode !== 'eraser') {
+      if (!this.state.mousePos) {
+        return;
+      }
+
+      if (this.props.settings.drawMode === 'eraser') {
+        this.setState({
+          mousePos: null,
+          topLayerCommand: null,
+          topShadowLayerCommand: null,
+          bottomLayerCommand: null
+        });
+      } else if (this.props.settings.enableSmoothing) {
         (function () {
           var pencil = _this5.props.assets[_this5.props.settings.pencilType];
           var pencilSize = _constants.PENCIL_SIZE[_this5.props.settings.pencilType];
           var points = spline(simplify(_this5.points, _this5.props.settings.smoothingStrength), 10, _this5.props.settings.acuteThreshold * Math.PI / 180);
           _this5.points = [];
+
+          var shadowDOM = _reactDom2.default.findDOMNode(_this5.refs.topShadow);
+          var shadowCtx = shadowDOM.getContext('2d');
 
           var topLayerCommand = function topLayerCommand(ctx) {
             return new Promise(function (resolve) {
@@ -748,12 +759,19 @@ var Canvas = function (_React$Component) {
             });
           };
 
-          var topShadowLayerCommand = function topShadowLayerCommand(ctx) {
+          var topShadowBufferLayerCommand = function topShadowBufferLayerCommand(ctx, canvas) {
             return new Promise(function (resolve) {
+              // draw interpolation points
               ctx.globalCompositeOperation = 'source-over';
-              ctx.shadowBlur = 8;
-              ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
               drawPoints(ctx, pencil, points, pencilSize.top[0], pencilSize.top[1]);
+
+              // topShadowBuffer --(blur)--> topShadow
+              shadowCtx.globalCompositeOperation = 'source-over';
+              shadowCtx.shadowBlur = 8;
+              shadowCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+              shadowCtx.drawImage(canvas, 0, 0);
+              // clear topShadowBuffer
+              ctx.clearRect(0, 0, 1280, 720);
               resolve(ctx);
             });
           };
@@ -791,52 +809,81 @@ var Canvas = function (_React$Component) {
           _this5.setState({
             mousePos: null,
             topLayerCommand: !_this5.props.settings.enableTopLayer ? null : topLayerCommand,
-            topShadowLayerCommand: !_this5.props.settings.enableTopLayer ? null : _this5.props.settings.lightMode ? null : topShadowLayerCommand,
+            topShadowBufferLayerCommand: !_this5.props.settings.enableTopLayer || _this5.props.settings.lightMode ? null : topShadowBufferLayerCommand,
             bottomLayerCommand: !_this5.props.settings.enableBottomLayer ? null : bottomLayerCommand,
             sketchLayerCommand: sketchLayerCommand
           });
         })();
       } else {
-        var _bottomLayerCommand = function _bottomLayerCommand(ctx) {
-          return (0, _co2.default)(regeneratorRuntime.mark(function _callee4() {
-            return regeneratorRuntime.wrap(function _callee4$(_context4) {
-              while (1) {
-                switch (_context4.prev = _context4.next) {
-                  case 0:
-                    if (!this.props.settings.lightMode) {
-                      _context4.next = 3;
-                      break;
-                    }
+        (function () {
+          var shadowDOM = _reactDom2.default.findDOMNode(_this5.refs.topShadow);
+          var shadowCtx = shadowDOM.getContext('2d');
 
-                    _context4.next = 3;
-                    return this.drawGradientEffect.bind(this)(ctx);
+          var topShadowBufferLayerCommand = function topShadowBufferLayerCommand(ctx, canvas) {
+            return (0, _co2.default)(regeneratorRuntime.mark(function _callee4() {
+              return regeneratorRuntime.wrap(function _callee4$(_context4) {
+                while (1) {
+                  switch (_context4.prev = _context4.next) {
+                    case 0:
+                      // topShadowBuffer --(blur)--> topShadow
+                      shadowCtx.globalCompositeOperation = 'source-over';
+                      shadowCtx.shadowBlur = 8;
+                      shadowCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                      shadowCtx.drawImage(canvas, 0, 0);
+                      // clear topShadowBuffer
+                      ctx.clearRect(0, 0, 1280, 720);
+                      return _context4.abrupt('return', ctx);
 
-                  case 3:
-                    return _context4.abrupt('return', ctx);
-
-                  case 4:
-                  case 'end':
-                    return _context4.stop();
+                    case 6:
+                    case 'end':
+                      return _context4.stop();
+                  }
                 }
-              }
-            }, _callee4, this);
-          }).bind(_this5));
-        };
+              }, _callee4, this);
+            }).bind(_this5));
+          };
 
-        var _sketchLayerCommand = function _sketchLayerCommand(ctx) {
-          return new Promise(function (resolve) {
-            ctx.clearRect(0, 0, 1280, 720);
-            resolve(ctx);
+          var bottomLayerCommand = function bottomLayerCommand(ctx) {
+            return (0, _co2.default)(regeneratorRuntime.mark(function _callee5() {
+              return regeneratorRuntime.wrap(function _callee5$(_context5) {
+                while (1) {
+                  switch (_context5.prev = _context5.next) {
+                    case 0:
+                      if (!this.props.settings.lightMode) {
+                        _context5.next = 3;
+                        break;
+                      }
+
+                      _context5.next = 3;
+                      return this.drawGradientEffect.bind(this)(ctx);
+
+                    case 3:
+                      return _context5.abrupt('return', ctx);
+
+                    case 4:
+                    case 'end':
+                      return _context5.stop();
+                  }
+                }
+              }, _callee5, this);
+            }).bind(_this5));
+          };
+
+          var sketchLayerCommand = function sketchLayerCommand(ctx) {
+            return new Promise(function (resolve) {
+              ctx.clearRect(0, 0, 1280, 720);
+              resolve(ctx);
+            });
+          };
+
+          _this5.setState({
+            mousePos: null,
+            topLayerCommand: null,
+            topShadowBufferLayerCommand: _this5.props.settings.lightMode ? null : topShadowBufferLayerCommand,
+            bottomLayerCommand: bottomLayerCommand,
+            sketchLayerCommand: sketchLayerCommand
           });
-        };
-
-        this.setState({
-          mousePos: null,
-          topLayerCommand: null,
-          topShadowLayerCommand: null,
-          bottomLayerCommand: _bottomLayerCommand,
-          sketchLayerCommand: _sketchLayerCommand
-        });
+        })();
       }
     }
   }, {
@@ -1052,7 +1099,7 @@ function simplify(points, strength) {
   }
 }
 
-},{"./../package.json":476,"./constants":3,"./layer":4,"co":12,"react":475}],3:[function(require,module,exports){
+},{"./../package.json":476,"./constants":3,"./layer":4,"co":12,"react":475,"react-dom":336}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1143,7 +1190,7 @@ var Layer = function (_React$Component) {
     value: function componentDidMount() {
       var _this2 = this;
 
-      var canvasDOM = _reactDom2.default.findDOMNode(this.refs.canvas);
+      var canvasDOM = this.getCanvas();
       var ctx = canvasDOM.getContext('2d');
 
       this.setState({
@@ -1153,7 +1200,7 @@ var Layer = function (_React$Component) {
       if (this.props.initialize) {
         //this.props.initialize(ctx);
         setTimeout(function () {
-          return _this2.props.initialize(ctx);
+          return _this2.props.initialize(ctx, canvasDOM);
         }, 0);
       }
     }
@@ -1182,7 +1229,7 @@ var Layer = function (_React$Component) {
               switch (_context.prev = _context.next) {
                 case 0:
                   _context.next = 2;
-                  return this.state.runningCommand(this.state.ctx);
+                  return this.state.runningCommand(this.state.ctx, this.getCanvas());
 
                 case 2:
                   this.setState({
@@ -9420,18 +9467,18 @@ var EventListener = {
    * @param {function} callback Callback function.
    * @return {object} Object with a `remove` method.
    */
-  listen: function (target, eventType, callback) {
+  listen: function listen(target, eventType, callback) {
     if (target.addEventListener) {
       target.addEventListener(eventType, callback, false);
       return {
-        remove: function () {
+        remove: function remove() {
           target.removeEventListener(eventType, callback, false);
         }
       };
     } else if (target.attachEvent) {
       target.attachEvent('on' + eventType, callback);
       return {
-        remove: function () {
+        remove: function remove() {
           target.detachEvent('on' + eventType, callback);
         }
       };
@@ -9446,11 +9493,11 @@ var EventListener = {
    * @param {function} callback Callback function.
    * @return {object} Object with a `remove` method.
    */
-  capture: function (target, eventType, callback) {
+  capture: function capture(target, eventType, callback) {
     if (target.addEventListener) {
       target.addEventListener(eventType, callback, true);
       return {
-        remove: function () {
+        remove: function remove() {
           target.removeEventListener(eventType, callback, true);
         }
       };
@@ -9464,7 +9511,7 @@ var EventListener = {
     }
   },
 
-  registerDefault: function () {}
+  registerDefault: function registerDefault() {}
 };
 
 module.exports = EventListener;
@@ -9588,7 +9635,7 @@ module.exports = camelizeStyleName;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @typechecks
+ * 
  */
 
 var isTextNode = require('./isTextNode');
@@ -9597,10 +9644,6 @@ var isTextNode = require('./isTextNode');
 
 /**
  * Checks if a given DOM node contains or is another DOM node.
- *
- * @param {?DOMNode} outerNode Outer DOM node.
- * @param {?DOMNode} innerNode Inner DOM node.
- * @return {boolean} True if `outerNode` contains or is `innerNode`.
  */
 function containsNode(outerNode, innerNode) {
   if (!outerNode || !innerNode) {
@@ -9611,7 +9654,7 @@ function containsNode(outerNode, innerNode) {
     return false;
   } else if (isTextNode(innerNode)) {
     return containsNode(outerNode, innerNode.parentNode);
-  } else if (outerNode.contains) {
+  } else if ('contains' in outerNode) {
     return outerNode.contains(innerNode);
   } else if (outerNode.compareDocumentPosition) {
     return !!(outerNode.compareDocumentPosition(innerNode) & 16);
@@ -9847,6 +9890,7 @@ module.exports = createNodesFromMarkup;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * 
  */
 
 function makeEmptyFunction(arg) {
@@ -9860,7 +9904,7 @@ function makeEmptyFunction(arg) {
  * primarily useful idiomatically for overridable function endpoints which
  * always need to be callable, since JS lacks a null-call idiom ala Cocoa.
  */
-function emptyFunction() {}
+var emptyFunction = function emptyFunction() {};
 
 emptyFunction.thatReturns = makeEmptyFunction;
 emptyFunction.thatReturnsFalse = makeEmptyFunction(false);
@@ -10301,7 +10345,7 @@ var invariant = require('./invariant');
  * @param {object} obj
  * @return {object}
  */
-var keyMirror = function (obj) {
+var keyMirror = function keyMirror(obj) {
   var ret = {};
   var key;
   !(obj instanceof Object && !Array.isArray(obj)) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'keyMirror(...): Argument must be an object.') : invariant(false) : void 0;
@@ -10339,7 +10383,7 @@ module.exports = keyMirror;
  * 'xa12' in that case. Resolve keys you want to use once at startup time, then
  * reuse those resolutions.
  */
-var keyOf = function (oneKeyObj) {
+var keyOf = function keyOf(oneKeyObj) {
   var key;
   for (key in oneKeyObj) {
     if (!oneKeyObj.hasOwnProperty(key)) {
@@ -10411,6 +10455,7 @@ module.exports = mapObject;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * 
  * @typechecks static-only
  */
 
@@ -10418,9 +10463,6 @@ module.exports = mapObject;
 
 /**
  * Memoizes the return value of a function that accepts one string argument.
- *
- * @param {function} callback
- * @return {function}
  */
 
 function memoizeStringOnly(callback) {
@@ -10481,11 +10523,11 @@ var performanceNow;
  * because of Facebook's testing infrastructure.
  */
 if (performance.now) {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return performance.now();
   };
 } else {
-  performanceNow = function () {
+  performanceNow = function performanceNow() {
     return Date.now();
   };
 }
@@ -10584,7 +10626,7 @@ var emptyFunction = require('./emptyFunction');
 var warning = emptyFunction;
 
 if (process.env.NODE_ENV !== 'production') {
-  warning = function (condition, format) {
+  warning = function warning(condition, format) {
     for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
       args[_key - 2] = arguments[_key];
     }
@@ -29578,7 +29620,7 @@ module.exports = require('./lib/React');
 },{"./lib/React":363}],476:[function(require,module,exports){
 module.exports={
   "name": "ssrgen",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "SSR Sign Generator",
   "private": true,
   "main": "lib/main.jsx",
@@ -29587,7 +29629,7 @@ module.exports={
     "build": "npm run build-js && npm run build-css",
     "build-js": "browserify lib/main.jsx -o dist/bundle.js -t babelify --extension jsx",
     "build-css": "node-sass -r style -o dist",
-    "publish": "npm run build && echo \"hoge\""
+    "publish": "npm run build && gh-pages -d dist"
   },
   "author": "spring-raining",
   "contributors": [
