@@ -17,7 +17,7 @@ export default class Layer extends React.Component {
   }
 
   componentDidMount() {
-    const canvasDOM = ReactDOM.findDOMNode(this.refs.canvas);
+    const canvasDOM = this.getCanvas();
     const ctx = canvasDOM.getContext('2d');
 
     this.setState({
@@ -26,7 +26,7 @@ export default class Layer extends React.Component {
 
     if (this.props.initialize) {
       //this.props.initialize(ctx);
-      setTimeout(() => this.props.initialize(ctx), 0);
+      setTimeout(() => this.props.initialize(ctx, canvasDOM), 0);
     }
   }
 
@@ -47,7 +47,7 @@ export default class Layer extends React.Component {
     }
     if (this.state.runningCommand) {
       co(function *() {
-        yield this.state.runningCommand(this.state.ctx);
+        yield this.state.runningCommand(this.state.ctx, this.getCanvas());
         this.setState({
           runningCommand: null,
         });

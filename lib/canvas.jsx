@@ -2,6 +2,7 @@
 
 import co from 'co';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import packageJson from './../package.json';
 import {GRADIENT, PENCIL_SIZE} from './constants';
 import Layer from './layer';
@@ -14,6 +15,7 @@ export default class Canvas extends React.Component {
       topLayerCommand: null,
       topLayerPencilSize: 8,
       topShadowLayerCommand: null,
+      topShadowBufferLayerCommand: null,
       bottomLayerCommand: null,
       bottomLayerPencilSize: 20,
       sketchLayerCommand: null,
@@ -51,6 +53,8 @@ export default class Canvas extends React.Component {
                command={this.state.bottomLayerCommand} />
         <Layer ref="topShadow"
                command={this.state.topShadowLayerCommand} />
+        <Layer ref="topShadowBuffer"
+               command={this.state.topShadowBufferLayerCommand} />
         <Layer ref="top"
                command={this.state.topLayerCommand} />
         <Layer ref="sketch"
@@ -222,15 +226,6 @@ export default class Canvas extends React.Component {
             resolve(ctx);
           });
 
-        const topShadowLayerCommand = (ctx) =>
-          new Promise((resolve) => {
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-            draw(ctx, pencil, lastPoint, currentPoint, pencilSize.top[0], pencilSize.top[1]);
-            resolve(ctx);
-          });
-
         const bottomLayerCommand = (ctx) =>
           co(function *() {
             ctx.globalCompositeOperation = 'source-over';
@@ -251,13 +246,15 @@ export default class Canvas extends React.Component {
         }
         else {
           this.setState({
-            topLayerCommand: !this.props.settings.enableTopLayer ? null :
-              topLayerCommand,
-            topShadowLayerCommand: !this.props.settings.enableTopLayer ? null :
-              this.props.settings.lightMode ? null :
-                topShadowLayerCommand,
-            bottomLayerCommand: !this.props.settings.enableBottomLayer ? null :
-              bottomLayerCommand,
+            topLayerCommand: !this.props.settings.enableTopLayer
+              ? null
+              : topLayerCommand,
+            topShadowBufferLayerCommand: !this.props.settings.enableTopLayer || this.props.settings.lightMode
+              ? null
+              : topLayerCommand,
+            bottomLayerCommand: !this.props.settings.enableBottomLayer
+              ? null
+              : bottomLayerCommand,
             mousePos: currentPoint,
           });
         }
@@ -266,7 +263,19 @@ export default class Canvas extends React.Component {
   }
 
   _onCanvasMouseUp(e) {
-    if (this.props.settings.enableSmoothing && this.props.settings.drawMode !== 'eraser') {
+    if (!this.state.mousePos) {
+      return;
+    }
+
+    if (this.props.settings.drawMode === 'eraser') {
+      this.setState({
+        mousePos: null,
+        topLayerCommand: null,
+        topShadowLayerCommand: null,
+        bottomLayerCommand: null,
+      });
+    }
+    else if (this.props.settings.enableSmoothing) {
       const pencil = this.props.assets[this.props.settings.pencilType];
       const pencilSize = PENCIL_SIZE[this.props.settings.pencilType];
       const points = spline(
@@ -276,6 +285,9 @@ export default class Canvas extends React.Component {
       );
       this.points = [];
 
+      const shadowDOM = ReactDOM.findDOMNode(this.refs.topShadow);
+      const shadowCtx = shadowDOM.getContext('2d');
+
       const topLayerCommand = (ctx) =>
         new Promise((resolve) => {
           ctx.globalCompositeOperation = 'source-over';
@@ -283,12 +295,19 @@ export default class Canvas extends React.Component {
           resolve(ctx);
         });
 
-      const topShadowLayerCommand = (ctx) =>
+      const topShadowBufferLayerCommand = (ctx, canvas) =>
         new Promise((resolve) => {
+          // draw interpolation points
           ctx.globalCompositeOperation = 'source-over';
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
           drawPoints(ctx, pencil, points, pencilSize.top[0], pencilSize.top[1]);
+
+          // topShadowBuffer --(blur)--> topShadow
+          shadowCtx.globalCompositeOperation = 'source-over';
+          shadowCtx.shadowBlur = 8;
+          shadowCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+          shadowCtx.drawImage(canvas, 0, 0);
+          // clear topShadowBuffer
+          ctx.clearRect(0, 0, 1280, 720);
           resolve(ctx);
         });
 
@@ -308,17 +327,34 @@ export default class Canvas extends React.Component {
 
       this.setState({
         mousePos: null,
-        topLayerCommand: !this.props.settings.enableTopLayer ? null :
-          topLayerCommand,
-        topShadowLayerCommand: !this.props.settings.enableTopLayer ? null :
-          this.props.settings.lightMode ? null :
-            topShadowLayerCommand,
-        bottomLayerCommand: !this.props.settings.enableBottomLayer ? null :
-          bottomLayerCommand,
+        topLayerCommand: !this.props.settings.enableTopLayer
+          ? null
+          : topLayerCommand,
+        topShadowBufferLayerCommand: !this.props.settings.enableTopLayer || this.props.settings.lightMode
+          ? null
+          : topShadowBufferLayerCommand,
+        bottomLayerCommand: !this.props.settings.enableBottomLayer
+          ? null
+          : bottomLayerCommand,
         sketchLayerCommand: sketchLayerCommand,
       });
     }
     else {
+      const shadowDOM = ReactDOM.findDOMNode(this.refs.topShadow);
+      const shadowCtx = shadowDOM.getContext('2d');
+
+      const topShadowBufferLayerCommand = (ctx, canvas) =>
+        co(function *() {
+          // topShadowBuffer --(blur)--> topShadow
+          shadowCtx.globalCompositeOperation = 'source-over';
+          shadowCtx.shadowBlur = 8;
+          shadowCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+          shadowCtx.drawImage(canvas, 0, 0);
+          // clear topShadowBuffer
+          ctx.clearRect(0, 0, 1280, 720);
+          return ctx;
+        }.bind(this));
+
       const bottomLayerCommand = (ctx) =>
         co(function *() {
           if (this.props.settings.lightMode) {
@@ -336,7 +372,9 @@ export default class Canvas extends React.Component {
       this.setState({
         mousePos: null,
         topLayerCommand: null,
-        topShadowLayerCommand: null,
+        topShadowBufferLayerCommand: this.props.settings.lightMode
+          ? null
+          : topShadowBufferLayerCommand,
         bottomLayerCommand: bottomLayerCommand,
         sketchLayerCommand: sketchLayerCommand,
       });
