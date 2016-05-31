@@ -92,13 +92,6 @@ export default class Canvas extends React.Component {
     );
   }
 
-  getPencilBG(name) {
-    return (name === 'cute') ? this.props.assets.CUTE_BG :
-      (name === 'cool') ? this.props.assets.COOL_BG :
-        (name === 'passion') ? this.props.assets.PASSION_BG :
-          null;
-  }
-
   generate(plain = false) {
     return co(function *() {
       const canvas = document.createElement('canvas');
