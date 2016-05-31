@@ -6,8 +6,10 @@
   "main": "lib/main.jsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build-js && npm run build-css",
     "build-js": "browserify lib/main.jsx -o dist/bundle.js -t babelify --extension jsx",
-    "build-css": "node-sass -r style -o dist"
+    "build-css": "node-sass -r style -o dist",
+    "publish": "npm run build && gh-pages -d dist"
   },
   "author": "spring-raining",
   "contributors": [
@@ -37,6 +39,7 @@
     "blueimp-canvas-to-blob": "^3.3.0",
     "browserify": "^13.0.1",
     "co": "^4.6.0",
+    "gh-pages": "^0.11.0",
     "node-sass": "^3.7.0",
     "react": "^15.1.0",
     "react-dom": "^15.1.0",
