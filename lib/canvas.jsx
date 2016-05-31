@@ -208,8 +208,7 @@ export default class Canvas extends React.Component {
           topLayerCommand: !this.props.settings.enableTopLayer ? null :
             eraserCommand,
           topShadowLayerCommand: !this.props.settings.enableTopLayer ? null :
-            this.props.settings.lightMode ? null :
-              eraserCommand,
+            eraserCommand,
           bottomLayerCommand: !this.props.settings.enableBottomLayer ? null :
             eraserCommand,
           mousePos: currentPoint,
